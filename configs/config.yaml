@@ -1,0 +1,7 @@
+app:
+  server:
+    port: "8080"                   # TCP port the server listens on
+    read_timeout: 5s               # Maximum duration for reading the entire request, including body
+    write_timeout: 10s             # Maximum duration before timing out writes of the response
+    max_header_bytes: 1048576      # Maximum size of request headers in bytes (1 MB)
+    shutdown_timeout: 15s          # Timeout for graceful server shutdown
