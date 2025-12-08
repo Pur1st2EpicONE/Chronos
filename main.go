@@ -4,6 +4,6 @@ import "Chronos/internal/app"
 
 func main() {
 
-	_ = app.Boot()
+	app.Boot().Run()
 
 }

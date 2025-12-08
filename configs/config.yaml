@@ -1,7 +1,21 @@
-app:
-  server:
-    port: "8080"                   # TCP port the server listens on
-    read_timeout: 5s               # Maximum duration for reading the entire request, including body
-    write_timeout: 10s             # Maximum duration before timing out writes of the response
-    max_header_bytes: 1048576      # Maximum size of request headers in bytes (1 MB)
-    shutdown_timeout: 15s          # Timeout for graceful server shutdown
+logger:
+  level: trace
+
+server:
+  port: "8080"
+  read_timeout: 5s
+  write_timeout: 10s
+  max_header_bytes: 1048576
+  shutdown_timeout: 5s
+
+database:
+  host: localhost
+  port: "5433"
+  dbname: chronos-db
+  sslmode: disable
+  max_open_conns: 57
+  max_idle_conns: 25
+  conn_max_lifetime: 1h
+
+service:
+ 

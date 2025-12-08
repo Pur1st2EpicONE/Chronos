@@ -6,14 +6,13 @@ import (
 	"Chronos/internal/repository"
 	"Chronos/internal/server"
 	"Chronos/internal/service"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"context"
 	"errors"
 	"net/http"
-	"os"
-	"os/signal"
-	"sync"
-	"syscall"
 
 	"github.com/wb-go/wbf/dbpg"
 	"github.com/wb-go/wbf/zlog"
@@ -24,49 +23,38 @@ type App struct {
 	storage repository.Storage
 	ctx     context.Context
 	cancel  context.CancelFunc
-	wg      *sync.WaitGroup
 	log     zlog.Zerolog
 }
 
 func Boot() *App {
 
 	zlog.InitConsole()
-	zlog.SetLevel("trace")
-	log := zlog.Logger.With().Str("layer", "app").Logger()
 
 	config, err := config.Load()
 	if err != nil {
-		log.Fatal().Err(err).Msg("app — failed to load configs")
+		zlog.Logger.Fatal().Err(err).Str("layer", "app").Msg("app — failed to load configs")
 	}
 
-	db, err := repository.ConnectDB(config.Storage)
+	zlog.SetLevel(config.Logger.Level)
+	log := zlog.Logger.With().Str("layer", "app").Logger()
+
+	ctx, cancel := newContext(log)
+
+	db, err := connectDB(log, config.Storage)
 	if err != nil {
 		log.Fatal().Err(err).Msg("app — failed to connect to database")
 	}
-	log.Info().Msg("app — connected to database")
 
 	server, storage := wireApp(db, config)
 
-	ctx, cancel := newContext(log)
-	wg := new(sync.WaitGroup)
-
 	return &App{
-		server:  server,
-		storage: storage,
+		log:     log,
 		ctx:     ctx,
 		cancel:  cancel,
-		log:     log,
-		wg:      wg,
+		server:  server,
+		storage: storage,
 	}
 
-}
-
-func wireApp(db *dbpg.DB, config config.App) (server.Server, repository.Storage) {
-	storage := repository.NewStorage(db, config.Storage)
-	service := service.NewService(config.Service, storage)
-	handler := handler.NewHandler(service)
-	server := server.NewServer(config.Server, handler)
-	return server, storage
 }
 
 func newContext(log zlog.Zerolog) (context.Context, context.CancelFunc) {
@@ -85,20 +73,35 @@ func newContext(log zlog.Zerolog) (context.Context, context.CancelFunc) {
 
 }
 
+func connectDB(log zlog.Zerolog, config config.Storage) (*dbpg.DB, error) {
+	db, err := repository.ConnectDB(config)
+	if err != nil {
+		return nil, err
+	}
+	log.Info().Msg("app — connected to database")
+	return db, nil
+}
+
+func wireApp(db *dbpg.DB, config config.Config) (server.Server, repository.Storage) {
+	storage := repository.NewStorage(db, config.Storage)
+	service := service.NewService(config.Service, storage)
+	handler := handler.NewHandler(service)
+	server := server.NewServer(config.Server, handler)
+	return server, storage
+}
+
 func (a *App) Run() {
 
-	a.wg.Go(func() {
+	go func() {
 		if err := a.server.Run(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			a.log.Fatal().Err(err).Msg("server run failed")
 		}
-	})
+	}()
 
 	<-a.ctx.Done()
 
 	a.log.Info().Msg("app — shutting down...")
 	a.Stop()
-
-	a.wg.Wait()
 
 }
 

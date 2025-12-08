@@ -2,19 +2,21 @@ package config
 
 import (
 	"fmt"
+	"os"
 	"time"
 
 	wbf "github.com/wb-go/wbf/config"
 )
 
-type Root struct {
-	App App `mapstructure:"app"`
+type Config struct {
+	Logger  Logger  `mapstructure:"logger"`
+	Server  Server  `mapstructure:"server"`
+	Storage Storage `mapstructure:"database"`
+	Service Service `mapstructure:"service"`
 }
 
-type App struct {
-	Server  Server  `mapstructure:"server"`
-	Service Service `mapstructure:"service"`
-	Storage Storage `mapstructure:"storage"`
+type Logger struct {
+	Level string `mapstructure:"level"`
 }
 
 type Server struct {
@@ -29,32 +31,38 @@ type Service struct {
 }
 
 type Storage struct {
-	MasterDSN       string
-	MaxOpenConns    int
-	MaxIdleConns    int
-	ConnMaxLifetime time.Duration
+	Host            string        `mapstructure:"host"`
+	Port            string        `mapstructure:"port"`
+	Username        string        `mapstructure:"username"`
+	Password        string        `mapstructure:"passwod"`
+	DBName          string        `mapstructure:"dbname"`
+	SSLMode         string        `mapstructure:"sslmode"`
+	MaxOpenConns    int           `mapstructure:"max_open_conns"`
+	MaxIdleConns    int           `mapstructure:"max_idle_conns"`
+	ConnMaxLifetime time.Duration `mapstructure:"conn_max_lifetime"`
 }
 
-func Load() (App, error) {
+func Load() (Config, error) {
 
 	cfg := wbf.New()
 
-	// if err := cfg.LoadEnvFiles(".env"); err != nil {
-	// 	return App{}, err
-	// }
+	if err := cfg.LoadEnvFiles(".env"); err != nil {
+		return Config{}, err
+	}
 
 	if err := cfg.LoadConfigFiles("./configs/config.yaml"); err != nil {
-		fmt.Println("ASD")
-		return App{}, err
+		return Config{}, err
 	}
 
-	cfg.EnableEnv("")
+	var conf Config
 
-	var root Root
-	if err := cfg.Unmarshal(&root); err != nil {
-		return App{}, fmt.Errorf("unmarshal config: %w", err)
+	if err := cfg.Unmarshal(&conf); err != nil {
+		return Config{}, fmt.Errorf("unmarshal config: %w", err)
 	}
 
-	return root.App, nil
+	conf.Storage.Username = os.Getenv("DB_USER")
+	conf.Storage.Password = os.Getenv("DB_PASSWORD")
+
+	return conf, nil
 
 }

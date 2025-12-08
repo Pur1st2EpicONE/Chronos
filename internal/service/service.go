@@ -2,11 +2,16 @@ package service
 
 import (
 	"Chronos/internal/config"
+	"Chronos/internal/models"
 	"Chronos/internal/repository"
+	"Chronos/internal/service/impl"
+	"context"
 )
 
-type Service any
+type Service interface {
+	CreateNotification(ctx context.Context, notification models.Notification) (int64, error)
+}
 
 func NewService(config config.Service, storage repository.Storage) Service {
-	return nil
+	return impl.NewService(config, storage)
 }
