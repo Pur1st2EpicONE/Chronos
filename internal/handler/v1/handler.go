@@ -1,8 +1,10 @@
 package v1
 
 import (
+	"Chronos/internal/errs"
 	"Chronos/internal/models"
 	"Chronos/internal/service"
+	"strconv"
 
 	"github.com/wb-go/wbf/ginext"
 )
@@ -20,7 +22,7 @@ func (h *Handler) CreateNotification(c *ginext.Context) {
 	var request CreateNotificationV1
 
 	if err := c.ShouldBindJSON(&request); err != nil {
-		respondError(c, err)
+		respondError(c, errs.ErrInvalidJSON)
 		return
 	}
 
@@ -44,5 +46,40 @@ func (h *Handler) CreateNotification(c *ginext.Context) {
 	}
 
 	respondOK(c, id)
+
+}
+
+func (h *Handler) GetNotification(c *ginext.Context) {
+
+	notificationID, err := strconv.ParseInt(c.Query("id"), 10, 64)
+	if err != nil || notificationID <= 0 {
+		respondError(c, errs.ErrInvalidNotificationID)
+		return
+	}
+
+	status, err := h.service.GetNotification(c.Request.Context(), notificationID)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+
+	respondOK(c, status)
+
+}
+
+func (h *Handler) CancelNotification(c *ginext.Context) {
+
+	notificationID, err := strconv.ParseInt(c.Query("id"), 10, 64)
+	if err != nil || notificationID <= 0 {
+		respondError(c, errs.ErrInvalidNotificationID)
+		return
+	}
+
+	if err := h.service.CancelNotification(c.Request.Context(), notificationID); err != nil {
+		respondError(c, err)
+		return
+	}
+
+	respondOK(c, "canceled")
 
 }

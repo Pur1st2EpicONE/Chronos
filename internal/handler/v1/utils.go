@@ -1,38 +1,18 @@
 package v1
 
 import (
+	"Chronos/internal/errs"
 	"errors"
-	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/wb-go/wbf/ginext"
 )
 
-// func parseQuery(userID string, eventDate string) (int, time.Time, error) {
-
-// 	if userID == "" || eventDate == "" {
-// 		return 0, time.Time{}, errs.ErrMissingParams
-// 	}
-
-// 	id, err := strconv.Atoi(userID)
-// 	if err != nil {
-// 		return 0, time.Time{}, errs.ErrInvalidUserID
-// 	}
-
-// 	date, err := parseDate(eventDate)
-// 	if err != nil {
-// 		return 0, time.Time{}, err
-// 	}
-
-// 	return id, date, nil
-
-// }
-
 func parseTime(timeStr string) (time.Time, error) {
 
 	if timeStr == "" {
-		return time.Time{}, errors.New("empty time")
+		return time.Time{}, errs.ErrMissingSendAt
 	}
 
 	if validTime, err := time.Parse(time.RFC3339, timeStr); err == nil {
@@ -43,7 +23,7 @@ func parseTime(timeStr string) (time.Time, error) {
 		return validTime, nil
 	}
 
-	return time.Time{}, fmt.Errorf("invalid time format: %s", timeStr)
+	return time.Time{}, errs.ErrInvalidSendAt
 
 }
 
@@ -53,37 +33,34 @@ func respondOK(c *ginext.Context, response any) {
 
 func respondError(c *ginext.Context, err error) {
 	if err != nil {
-		// status, msg := mapErrorToStatus(err)
-		c.AbortWithStatusJSON(400, ginext.H{"error": err.Error()})
+		status, msg := mapErrorToStatus(err)
+		c.AbortWithStatusJSON(status, ginext.H{"error": msg})
 	}
 }
 
-// func mapErrorToStatus(err error) (int, string) {
+func mapErrorToStatus(err error) (int, string) {
 
-// 	switch {
+	switch {
 
-// 	case errors.Is(err, errs.ErrInvalidJSON),
-// 		errors.Is(err, errs.ErrInvalidUserID),
-// 		errors.Is(err, errs.ErrInvalidEventID),
-// 		errors.Is(err, errs.ErrInvalidDateFormat),
-// 		errors.Is(err, errs.ErrEmptyEventText),
-// 		errors.Is(err, errs.ErrEventTextTooLong),
-// 		errors.Is(err, errs.ErrMissingEventID),
-// 		errors.Is(err, errs.ErrMissingParams),
-// 		errors.Is(err, errs.ErrMissingDate):
-// 		return http.StatusBadRequest, err.Error()
+	case errors.Is(err, errs.ErrInvalidJSON),
+		errors.Is(err, errs.ErrInvalidNotificationID),
+		errors.Is(err, errs.ErrMissingChannel),
+		errors.Is(err, errs.ErrUnsupportedChannel),
+		errors.Is(err, errs.ErrMessageTooLong),
+		errors.Is(err, errs.ErrMissingSendAt),
+		errors.Is(err, errs.ErrInvalidSendAt),
+		errors.Is(err, errs.ErrSendAtInPast),
+		errors.Is(err, errs.ErrSendAtTooFar),
+		errors.Is(err, errs.ErrMissingSendTo),
+		errors.Is(err, errs.ErrInvalidEmailFormat),
+		errors.Is(err, errs.ErrRecipientTooLong):
+		return http.StatusBadRequest, err.Error()
 
-// 	case errors.Is(err, errs.ErrMaxEvents),
-// 		errors.Is(err, errs.ErrEventNotFound),
-// 		errors.Is(err, errs.ErrNothingToUpdate),
-// 		errors.Is(err, errs.ErrEventInPast),
-// 		errors.Is(err, errs.ErrEventTooFar),
-// 		errors.Is(err, errs.ErrUnauthorized):
-// 		return http.StatusServiceUnavailable, err.Error()
+	case errors.Is(err, errs.ErrNotificationNotFound):
+		return http.StatusNotFound, err.Error()
 
-// 	default:
-// 		return http.StatusInternalServerError, errs.ErrInternal.Error()
+	default:
+		return http.StatusInternalServerError, errs.ErrInternal.Error()
+	}
 
-// 	}
-
-// }
+}

@@ -19,5 +19,19 @@ func NewService(config config.Service, storage repository.Storage) *Service {
 }
 
 func (s *Service) CreateNotification(ctx context.Context, notification models.Notification) (int64, error) {
+
+	if err := validateCreate(notification); err != nil {
+		return 0, err
+	}
+
 	return s.Storage.CreateNotification(ctx, notification)
+
+}
+
+func (s *Service) GetNotification(ctx context.Context, notificationID int64) (string, error) {
+	return s.Storage.GetNotification(ctx, notificationID)
+}
+
+func (s *Service) CancelNotification(ctx context.Context, notificationID int64) error {
+	return s.Storage.CancelNotification(ctx, notificationID)
 }
