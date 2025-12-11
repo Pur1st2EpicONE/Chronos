@@ -1,6 +1,7 @@
 package app
 
 import (
+	"Chronos/internal/broker"
 	"Chronos/internal/config"
 	"Chronos/internal/handler"
 	"Chronos/internal/repository"
@@ -19,11 +20,12 @@ import (
 )
 
 type App struct {
+	log     zlog.Zerolog
+	broker  broker.Broker
 	server  server.Server
-	storage repository.Storage
 	ctx     context.Context
 	cancel  context.CancelFunc
-	log     zlog.Zerolog
+	storage repository.Storage
 }
 
 func Boot() *App {
@@ -38,20 +40,25 @@ func Boot() *App {
 	zlog.SetLevel(config.Logger.Level)
 	log := zlog.Logger.With().Str("layer", "app").Logger()
 
-	ctx, cancel := newContext(log)
-
 	db, err := connectDB(log, config.Storage)
 	if err != nil {
 		log.Fatal().Err(err).Msg("app — failed to connect to database")
 	}
 
-	server, storage := wireApp(db, config)
+	broker, err := broker.NewBroker(config.Broker)
+	if err != nil {
+		log.Fatal().Err(err).Msg("app — failed to create new message broker")
+	}
+
+	ctx, cancel := newContext(log)
+	server, storage := wireApp(db, broker, config)
 
 	return &App{
 		log:     log,
+		broker:  broker,
+		server:  server,
 		ctx:     ctx,
 		cancel:  cancel,
-		server:  server,
 		storage: storage,
 	}
 
@@ -82,9 +89,9 @@ func connectDB(log zlog.Zerolog, config config.Storage) (*dbpg.DB, error) {
 	return db, nil
 }
 
-func wireApp(db *dbpg.DB, config config.Config) (server.Server, repository.Storage) {
+func wireApp(db *dbpg.DB, broker broker.Broker, config config.Config) (server.Server, repository.Storage) {
 	storage := repository.NewStorage(db, config.Storage)
-	service := service.NewService(config.Service, storage)
+	service := service.NewService(broker, storage)
 	handler := handler.NewHandler(service)
 	server := server.NewServer(config.Server, handler)
 	return server, storage

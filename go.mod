@@ -2,7 +2,10 @@ module Chronos
 
 go 1.25.1
 
-require github.com/wb-go/wbf v0.0.10
+require (
+	github.com/rabbitmq/amqp091-go v1.10.0
+	github.com/wb-go/wbf v0.0.10
+)
 
 require (
 	github.com/bytedance/sonic v1.14.0 // indirect

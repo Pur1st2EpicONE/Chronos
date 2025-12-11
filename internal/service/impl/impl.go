@@ -1,37 +1,56 @@
 package impl
 
 import (
-	"Chronos/internal/config"
+	"Chronos/internal/broker"
 	"Chronos/internal/models"
 	"Chronos/internal/repository"
 	"context"
+	"time"
 
 	"github.com/wb-go/wbf/zlog"
 )
 
 type Service struct {
-	Storage repository.Storage
 	logger  zlog.Zerolog
+	broker  broker.Broker
+	storage repository.Storage
 }
 
-func NewService(config config.Service, storage repository.Storage) *Service {
-	return &Service{Storage: storage, logger: zlog.Logger.With().Str("layer", "service.impl").Logger()}
+func NewService(broker broker.Broker, storage repository.Storage) *Service {
+	return &Service{storage: storage, broker: broker, logger: zlog.Logger.With().Str("layer", "service.impl").Logger()}
 }
 
 func (s *Service) CreateNotification(ctx context.Context, notification models.Notification) (int64, error) {
 
-	if err := validateCreate(notification); err != nil {
+	var err error
+
+	if err = validateCreate(notification); err != nil {
 		return 0, err
 	}
 
-	return s.Storage.CreateNotification(ctx, notification)
+	now := time.Now().UTC()
+	notification.CreatedAt = now
+	notification.UpdatedAt = now
+	notification.Status = models.StatusPending
+
+	notification.ID, err = s.storage.CreateNotification(ctx, notification)
+	if err != nil {
+		return 0, err
+	}
+
+	err = s.broker.Produce(ctx, notification)
+	if err != nil {
+		return 0, err
+	}
+
+	return notification.ID, nil
 
 }
 
 func (s *Service) GetNotification(ctx context.Context, notificationID int64) (string, error) {
-	return s.Storage.GetNotification(ctx, notificationID)
+	return s.storage.GetNotification(ctx, notificationID)
 }
 
 func (s *Service) CancelNotification(ctx context.Context, notificationID int64) error {
-	return s.Storage.CancelNotification(ctx, notificationID)
+	return s.storage.CancelNotification(ctx, notificationID)
 }

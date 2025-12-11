@@ -15,15 +15,12 @@ func parseTime(timeStr string) (time.Time, error) {
 		return time.Time{}, errs.ErrMissingSendAt
 	}
 
-	if validTime, err := time.Parse(time.RFC3339, timeStr); err == nil {
-		return validTime, nil
+	validTime, err := time.Parse(time.RFC3339, timeStr)
+	if err != nil {
+		return time.Time{}, errs.ErrInvalidSendAt
 	}
 
-	if validTime, err := time.Parse("2006-01-02 15:04:05", timeStr); err == nil {
-		return validTime, nil
-	}
-
-	return time.Time{}, errs.ErrInvalidSendAt
+	return validTime.UTC(), nil
 
 }
 

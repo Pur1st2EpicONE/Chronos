@@ -61,7 +61,7 @@ func validateSendAt(t time.Time) error {
 		return errs.ErrMissingSendAt
 	}
 
-	now := time.Now()
+	now := time.Now().UTC()
 
 	if t.Before(now) {
 		return errs.ErrSendAtInPast

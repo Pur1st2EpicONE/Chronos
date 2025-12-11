@@ -12,7 +12,7 @@ type Config struct {
 	Logger  Logger  `mapstructure:"logger"`
 	Server  Server  `mapstructure:"server"`
 	Storage Storage `mapstructure:"database"`
-	Service Service `mapstructure:"service"`
+	Broker  Broker  `mapstructure:"broker"`
 }
 
 type Logger struct {
@@ -27,7 +27,18 @@ type Server struct {
 	ShutdownTimeout time.Duration `mapstructure:"shutdown_timeout"`
 }
 
-type Service struct {
+type Broker struct {
+	URL                  string        `mapstructure:"url"`
+	ConnectionName       string        `mapstructure:"connection_name"`
+	ConnectTimeout       time.Duration `mapstructure:"connect_timeout"`
+	Heartbeat            time.Duration `mapstructure:"heartbeat"`
+	MessageQueueTTL      time.Duration `mapstructure:"message_queue_ttl"`
+	ConsumeRetryAttempts int           `mapstructure:"consume_retry_attempts"`
+	ConsumeRetryDelay    time.Duration `mapstructure:"consume_retry_delay"`
+	ConsumeRetryBackoff  float64       `mapstructure:"consume_retry_backoff"`
+	PublishRetryAttempts int           `mapstructure:"publish_retry_attempts"`
+	PublishRetryDelay    time.Duration `mapstructure:"publish_retry_delay"`
+	PublishRetryBackoff  float64       `mapstructure:"publish_retry_backoff"`
 }
 
 type Storage struct {
