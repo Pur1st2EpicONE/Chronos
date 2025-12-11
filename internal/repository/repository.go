@@ -12,7 +12,7 @@ import (
 
 type Storage interface {
 	CreateNotification(ctx context.Context, notification models.Notification) (int64, error)
-	GetNotification(ctx context.Context, notificationID int64) (string, error)
+	GetStatus(ctx context.Context, notificationID int64) (string, error)
 	CancelNotification(ctx context.Context, id int64) error
 	Close()
 }

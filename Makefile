@@ -19,7 +19,7 @@ rabbit-load:
 	@until docker exec rabbitmq rabbitmqctl status > /dev/null 2>&1; do sleep 0.5; done
 
 app:
-	go run ./main.go -o app
+	go run ./cmd/chronos/main.go -o app
 
 migrate-up:
 	@migrate -path ./migrations -database "postgres://${DB_USER}:${DB_PASSWORD}@localhost:5433/chronos-db?sslmode=disable" up

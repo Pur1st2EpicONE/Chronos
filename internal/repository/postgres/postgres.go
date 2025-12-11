@@ -49,7 +49,7 @@ func (s *Storage) CreateNotification(ctx context.Context, notification models.No
 
 }
 
-func (s *Storage) GetNotification(ctx context.Context, notificationID int64) (string, error) {
+func (s *Storage) GetStatus(ctx context.Context, notificationID int64) (string, error) {
 
 	query := `
 

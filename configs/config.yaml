@@ -19,13 +19,21 @@ database:
 
 broker:
   url: amqp://guest:guest@localhost:5672/
+  queue_name: main
   connection_name: chronos-br
   connect_timeout: 10s
   heartbeat: 10s
-  message_queue_ttl: 30s
-  consume_retry_attempts: 3        
-  consume_retry_delay: 1s
-  consume_retry_backoff: 2.0
-  publish_retry_attempts: 7
-  publish_retry_delay: 150ms
-  publish_retry_backoff: 1.5
+  reconnect:
+    attempts: 3       
+    delay: 2s
+    backoff: 2.0
+  producer:
+    attempts: 7
+    delay: 150ms
+    backoff: 1.5
+    message_queue_ttl: 30s
+  consumer:
+    consumer_tag: chronos-worker
+    auto_ack: false
+    workers: 5
+    prefetch_count: 10

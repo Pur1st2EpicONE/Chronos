@@ -28,17 +28,30 @@ type Server struct {
 }
 
 type Broker struct {
-	URL                  string        `mapstructure:"url"`
-	ConnectionName       string        `mapstructure:"connection_name"`
-	ConnectTimeout       time.Duration `mapstructure:"connect_timeout"`
-	Heartbeat            time.Duration `mapstructure:"heartbeat"`
-	MessageQueueTTL      time.Duration `mapstructure:"message_queue_ttl"`
-	ConsumeRetryAttempts int           `mapstructure:"consume_retry_attempts"`
-	ConsumeRetryDelay    time.Duration `mapstructure:"consume_retry_delay"`
-	ConsumeRetryBackoff  float64       `mapstructure:"consume_retry_backoff"`
-	PublishRetryAttempts int           `mapstructure:"publish_retry_attempts"`
-	PublishRetryDelay    time.Duration `mapstructure:"publish_retry_delay"`
-	PublishRetryBackoff  float64       `mapstructure:"publish_retry_backoff"`
+	URL            string        `mapstructure:"url"`
+	QueueName      string        `mapstructure:"queue_name"`
+	ConnectionName string        `mapstructure:"connection_name"`
+	ConnectTimeout time.Duration `mapstructure:"connect_timeout"`
+	Heartbeat      time.Duration `mapstructure:"heartbeat"`
+
+	Reconnect Producer `mapstructure:"reconnect"`
+
+	Producer Producer `mapstructure:"producer"`
+	Consumer Consumer `mapstructure:"consumer"`
+}
+
+type Producer struct {
+	Attempts        int           `mapstructure:"attempts"`
+	Delay           time.Duration `mapstructure:"delay"`
+	Backoff         float64       `mapstructure:"backoff"`
+	MessageQueueTTL time.Duration `mapstructure:"message_queue_ttl"`
+}
+
+type Consumer struct {
+	ConsumerTag   string `mapstructure:"consumer_tag"`
+	AutoAck       bool   `mapstructure:"auto_ack"`
+	Workers       int    `mapstructure:"workers"`
+	PrefetchCount int    `mapstructure:"prefetch_count"`
 }
 
 type Storage struct {

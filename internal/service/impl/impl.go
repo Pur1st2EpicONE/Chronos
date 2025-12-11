@@ -47,8 +47,8 @@ func (s *Service) CreateNotification(ctx context.Context, notification models.No
 
 }
 
-func (s *Service) GetNotification(ctx context.Context, notificationID int64) (string, error) {
-	return s.storage.GetNotification(ctx, notificationID)
+func (s *Service) GetStatus(ctx context.Context, notificationID int64) (string, error) {
+	return s.storage.GetStatus(ctx, notificationID)
 }
 
 func (s *Service) CancelNotification(ctx context.Context, notificationID int64) error {

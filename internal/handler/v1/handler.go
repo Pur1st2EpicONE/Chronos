@@ -57,7 +57,7 @@ func (h *Handler) GetNotification(c *ginext.Context) {
 		return
 	}
 
-	status, err := h.service.GetNotification(c.Request.Context(), notificationID)
+	status, err := h.service.GetStatus(c.Request.Context(), notificationID)
 	if err != nil {
 		respondError(c, err)
 		return

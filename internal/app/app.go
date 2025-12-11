@@ -45,13 +45,37 @@ func Boot() *App {
 		log.Fatal().Err(err).Msg("app — failed to connect to database")
 	}
 
-	broker, err := broker.NewBroker(config.Broker)
+	app, err := newApp(db, log, config)
 	if err != nil {
-		log.Fatal().Err(err).Msg("app — failed to create new message broker")
+		log.Fatal().Err(err).Msg("app — failed to initialize")
 	}
 
+	return app
+
+}
+
+func connectDB(log zlog.Zerolog, config config.Storage) (*dbpg.DB, error) {
+	db, err := repository.ConnectDB(config)
+	if err != nil {
+		return nil, err
+	}
+	log.Info().Msg("app — connected to database")
+	return db, nil
+}
+
+func newApp(db *dbpg.DB, log zlog.Zerolog, config config.Config) (*App, error) {
+
 	ctx, cancel := newContext(log)
-	server, storage := wireApp(db, broker, config)
+
+	storage := repository.NewStorage(db, config.Storage)
+	broker, err := broker.NewBroker(config.Broker, storage)
+	if err != nil {
+		return nil, err
+	}
+
+	service := service.NewService(broker, storage)
+	handler := handler.NewHandler(service)
+	server := server.NewServer(config.Server, handler)
 
 	return &App{
 		log:     log,
@@ -60,7 +84,7 @@ func Boot() *App {
 		ctx:     ctx,
 		cancel:  cancel,
 		storage: storage,
-	}
+	}, nil
 
 }
 
@@ -80,28 +104,17 @@ func newContext(log zlog.Zerolog) (context.Context, context.CancelFunc) {
 
 }
 
-func connectDB(log zlog.Zerolog, config config.Storage) (*dbpg.DB, error) {
-	db, err := repository.ConnectDB(config)
-	if err != nil {
-		return nil, err
-	}
-	log.Info().Msg("app — connected to database")
-	return db, nil
-}
-
-func wireApp(db *dbpg.DB, broker broker.Broker, config config.Config) (server.Server, repository.Storage) {
-	storage := repository.NewStorage(db, config.Storage)
-	service := service.NewService(broker, storage)
-	handler := handler.NewHandler(service)
-	server := server.NewServer(config.Server, handler)
-	return server, storage
-}
-
 func (a *App) Run() {
 
 	go func() {
 		if err := a.server.Run(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			a.log.Fatal().Err(err).Msg("server run failed")
+		}
+	}()
+
+	go func() {
+		if err := a.broker.Consume(a.ctx); err != nil {
+			a.log.Fatal().Err(err).Msg("consumer run failed")
 		}
 	}()
 
