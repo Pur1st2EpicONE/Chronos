@@ -1,5 +1,6 @@
 logger:
-  level: trace
+  log_directory: ./logs
+  debug_mode: true
 
 server:
   port: "8080"

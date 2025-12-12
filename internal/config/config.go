@@ -16,7 +16,8 @@ type Config struct {
 }
 
 type Logger struct {
-	Level string `mapstructure:"level"`
+	Debug  bool   `mapstructure:"debug_mode"`
+	LogDir string `mapstructure:"log_directory"`
 }
 
 type Server struct {

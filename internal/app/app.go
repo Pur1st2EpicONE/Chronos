@@ -4,11 +4,14 @@ import (
 	"Chronos/internal/broker"
 	"Chronos/internal/config"
 	"Chronos/internal/handler"
+	"Chronos/internal/logger"
 	"Chronos/internal/repository"
 	"Chronos/internal/server"
 	"Chronos/internal/service"
+	"log"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 
 	"context"
@@ -16,11 +19,11 @@ import (
 	"net/http"
 
 	"github.com/wb-go/wbf/dbpg"
-	"github.com/wb-go/wbf/zlog"
 )
 
 type App struct {
-	log     zlog.Zerolog
+	logger  logger.Logger
+	logFile *os.File
 	broker  broker.Broker
 	server  server.Server
 	ctx     context.Context
@@ -30,55 +33,53 @@ type App struct {
 
 func Boot() *App {
 
-	zlog.InitConsole()
-
 	config, err := config.Load()
 	if err != nil {
-		zlog.Logger.Fatal().Err(err).Str("layer", "app").Msg("app — failed to load configs")
+		log.Fatalf("app — failed to load configs: %v", err)
 	}
 
-	zlog.SetLevel(config.Logger.Level)
-	log := zlog.Logger.With().Str("layer", "app").Logger()
+	logger, logFile := logger.NewLogger(config.Logger)
 
-	db, err := connectDB(log, config.Storage)
+	db, err := connectDB(logger, config.Storage)
 	if err != nil {
-		log.Fatal().Err(err).Msg("app — failed to connect to database")
+		logger.LogFatal("app — failed to connect to database", err, "layer", "app")
 	}
 
-	app, err := newApp(db, log, config)
+	app, err := newApp(db, logger, logFile, config)
 	if err != nil {
-		log.Fatal().Err(err).Msg("app — failed to initialize")
+		logger.LogFatal("app — failed to initialize", err, "layer", "app")
 	}
 
 	return app
 
 }
 
-func connectDB(log zlog.Zerolog, config config.Storage) (*dbpg.DB, error) {
+func connectDB(logger logger.Logger, config config.Storage) (*dbpg.DB, error) {
 	db, err := repository.ConnectDB(config)
 	if err != nil {
 		return nil, err
 	}
-	log.Info().Msg("app — connected to database")
+	logger.LogInfo("app — connected to database", "layer", "app")
 	return db, nil
 }
 
-func newApp(db *dbpg.DB, log zlog.Zerolog, config config.Config) (*App, error) {
+func newApp(db *dbpg.DB, logger logger.Logger, logFile *os.File, config config.Config) (*App, error) {
 
-	ctx, cancel := newContext(log)
+	ctx, cancel := newContext(logger)
 
-	storage := repository.NewStorage(db, config.Storage)
-	broker, err := broker.NewBroker(config.Broker, storage)
+	storage := repository.NewStorage(logger, db)
+	broker, err := broker.NewBroker(logger, config.Broker, storage)
 	if err != nil {
 		return nil, err
 	}
 
 	service := service.NewService(broker, storage)
 	handler := handler.NewHandler(service)
-	server := server.NewServer(config.Server, handler)
+	server := server.NewServer(logger, config.Server, handler)
 
 	return &App{
-		log:     log,
+		logger:  logger,
+		logFile: logFile,
 		broker:  broker,
 		server:  server,
 		ctx:     ctx,
@@ -88,7 +89,7 @@ func newApp(db *dbpg.DB, log zlog.Zerolog, config config.Config) (*App, error) {
 
 }
 
-func newContext(log zlog.Zerolog) (context.Context, context.CancelFunc) {
+func newContext(logger logger.Logger) (context.Context, context.CancelFunc) {
 
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
@@ -96,7 +97,7 @@ func newContext(log zlog.Zerolog) (context.Context, context.CancelFunc) {
 
 	go func() {
 		sig := <-sigCh
-		log.Info().Msg("app — received signal " + sig.String() + ", initiating graceful shutdown")
+		logger.LogInfo("app — received signal "+sig.String()+", initiating graceful shutdown", "layer", "app")
 		cancel()
 	}()
 
@@ -108,19 +109,21 @@ func (a *App) Run() {
 
 	go func() {
 		if err := a.server.Run(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			a.log.Fatal().Err(err).Msg("server run failed")
+			a.logger.LogFatal("server run failed", err, "layer", "app")
 		}
 	}()
 
-	go func() {
+	var wg sync.WaitGroup
+
+	wg.Go(func() {
 		if err := a.broker.Consume(a.ctx); err != nil {
-			a.log.Fatal().Err(err).Msg("consumer run failed")
+			a.logger.LogFatal("consumer run failed", err, "layer", "app")
 		}
-	}()
+	})
 
 	<-a.ctx.Done()
+	wg.Wait()
 
-	a.log.Info().Msg("app — shutting down...")
 	a.Stop()
 
 }
@@ -128,4 +131,7 @@ func (a *App) Run() {
 func (a *App) Stop() {
 	a.server.Shutdown()
 	a.storage.Close()
+	if a.logFile != nil {
+		_ = a.logFile.Close()
+	}
 }

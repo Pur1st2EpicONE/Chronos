@@ -52,5 +52,5 @@ func (s *Service) GetStatus(ctx context.Context, notificationID int64) (string, 
 }
 
 func (s *Service) CancelNotification(ctx context.Context, notificationID int64) error {
-	return s.storage.CancelNotification(ctx, notificationID)
+	return s.storage.SetStatus(ctx, notificationID, models.StatusCanceled)
 }

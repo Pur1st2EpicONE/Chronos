@@ -2,21 +2,21 @@ package postgres
 
 import (
 	"Chronos/internal/errs"
+	"Chronos/internal/logger"
 	"Chronos/internal/models"
 	"context"
 
 	"github.com/wb-go/wbf/dbpg"
 	"github.com/wb-go/wbf/retry"
-	"github.com/wb-go/wbf/zlog"
 )
 
 type Storage struct {
-	db  *dbpg.DB
-	log zlog.Zerolog
+	db     *dbpg.DB
+	logger logger.Logger
 }
 
-func NewStorage(db *dbpg.DB) *Storage {
-	return &Storage{db: db, log: zlog.Logger.With().Str("layer", "repository.postgres").Logger()}
+func NewStorage(logger logger.Logger, db *dbpg.DB) *Storage {
+	return &Storage{db: db, logger: logger}
 }
 
 func (s *Storage) CreateNotification(ctx context.Context, notification models.Notification) (int64, error) {
@@ -71,15 +71,15 @@ func (s *Storage) GetStatus(ctx context.Context, notificationID int64) (string, 
 
 }
 
-func (s *Storage) CancelNotification(ctx context.Context, id int64) error {
+func (s *Storage) SetStatus(ctx context.Context, notificationID int64, status string) error {
 
 	query := `
     
 	UPDATE Notifications
-    SET status = 'canceled', updated_at = NOW()
-    WHERE id = $1 AND status = 'pending';`
+    SET status = $1, updated_at = NOW()
+    WHERE id = $2;`
 
-	res, err := s.db.ExecWithRetry(ctx, retry.Strategy{Attempts: 3, Delay: 10, Backoff: 3}, query, id)
+	res, err := s.db.ExecWithRetry(ctx, retry.Strategy{Attempts: 3, Delay: 10, Backoff: 3}, query, status, notificationID)
 	if err != nil {
 		return err
 	}
@@ -99,9 +99,9 @@ func (s *Storage) CancelNotification(ctx context.Context, id int64) error {
 
 func (s *Storage) Close() {
 	if err := s.db.Master.Close(); err != nil {
-		s.log.Err(err).Msg("postgres — failed to close properly")
+		s.logger.LogError("postgres — failed to close properly", err, "layer", "repository.postgres")
 	} else {
-		s.log.Info().Msg("postgres — stopped")
+		s.logger.LogInfo("postgres — stopped", "layer", "repository.postgres")
 	}
 }
 

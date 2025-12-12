@@ -2,6 +2,7 @@ package repository
 
 import (
 	"Chronos/internal/config"
+	"Chronos/internal/logger"
 	"Chronos/internal/models"
 	"Chronos/internal/repository/postgres"
 	"context"
@@ -13,12 +14,12 @@ import (
 type Storage interface {
 	CreateNotification(ctx context.Context, notification models.Notification) (int64, error)
 	GetStatus(ctx context.Context, notificationID int64) (string, error)
-	CancelNotification(ctx context.Context, id int64) error
+	SetStatus(ctx context.Context, notificationID int64, status string) error
 	Close()
 }
 
-func NewStorage(db *dbpg.DB, config config.Storage) Storage {
-	return postgres.NewStorage(db)
+func NewStorage(logger logger.Logger, db *dbpg.DB) Storage {
+	return postgres.NewStorage(logger, db)
 }
 
 func ConnectDB(config config.Storage) (*dbpg.DB, error) {

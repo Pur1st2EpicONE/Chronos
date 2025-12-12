@@ -2,6 +2,7 @@ package rabbitmq
 
 import (
 	"Chronos/internal/config"
+	"Chronos/internal/logger"
 	"Chronos/internal/repository"
 	"context"
 
@@ -18,6 +19,7 @@ const (
 )
 
 type Broker struct {
+	logger   logger.Logger
 	config   config.Broker
 	Consumer *rabbitmq.Consumer
 	producer *rabbitmq.Publisher
@@ -25,7 +27,7 @@ type Broker struct {
 	client   *rabbitmq.RabbitClient
 }
 
-func NewBroker(config config.Broker, storage repository.Storage) (*Broker, error) {
+func NewBroker(logger logger.Logger, config config.Broker, storage repository.Storage) (*Broker, error) {
 
 	client, err := rabbitmq.NewClient(rabbitmq.ClientConfig{
 
@@ -57,7 +59,7 @@ func NewBroker(config config.Broker, storage repository.Storage) (*Broker, error
 
 	producer := rabbitmq.NewPublisher(client, mainExchange, contentType)
 
-	b := &Broker{config: config, Consumer: nil, producer: producer, storage: storage, client: client}
+	b := &Broker{logger: logger, config: config, Consumer: nil, producer: producer, storage: storage, client: client}
 
 	b.Consumer = rabbitmq.NewConsumer(client, rabbitmq.ConsumerConfig{
 		Queue:         config.QueueName,

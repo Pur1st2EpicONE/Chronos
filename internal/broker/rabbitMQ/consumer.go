@@ -10,7 +10,11 @@ import (
 )
 
 func (b *Broker) Consume(ctx context.Context) error {
-	return b.Consumer.Start(ctx)
+	if err := b.Consumer.Start(ctx); err != nil {
+		return err
+	}
+	b.logger.LogInfo("consumer — stopped", "layer", "broker.rabbitMQ")
+	return nil
 }
 
 func (b *Broker) handler(ctx context.Context, msg amqp091.Delivery) error {
@@ -27,9 +31,17 @@ func (b *Broker) handler(ctx context.Context, msg amqp091.Delivery) error {
 	}
 
 	if status == models.StatusPending {
-		fmt.Println(notification)
+		return b.send(ctx, notification)
 	}
 
 	return nil
 
+}
+
+func (b *Broker) send(ctx context.Context, notification models.Notification) error {
+	fmt.Println(notification.Message)
+	if err := b.storage.SetStatus(ctx, notification.ID, models.StatusSent); err != nil {
+		return err
+	}
+	return nil
 }

@@ -14,3 +14,5 @@ type Notification struct {
 }
 
 const StatusPending = "pending"
+const StatusCanceled = "canceled"
+const StatusSent = "sent"
