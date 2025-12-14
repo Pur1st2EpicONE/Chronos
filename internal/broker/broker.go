@@ -5,6 +5,7 @@ import (
 	"Chronos/internal/config"
 	"Chronos/internal/logger"
 	"Chronos/internal/models"
+	"Chronos/internal/notifier"
 	"Chronos/internal/repository"
 	"context"
 )
@@ -14,6 +15,6 @@ type Broker interface {
 	Produce(ctx context.Context, notification models.Notification) error
 }
 
-func NewBroker(logger logger.Logger, config config.Broker, storage repository.Storage) (Broker, error) {
-	return rabbitmq.NewBroker(logger, config, storage)
+func NewBroker(logger logger.Logger, config config.Broker, storage repository.Storage, notifier notifier.Notifier) (Broker, error) {
+	return rabbitmq.NewBroker(logger, config, storage, notifier)
 }

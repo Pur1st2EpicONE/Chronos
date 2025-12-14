@@ -13,6 +13,10 @@ type Notification struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
-const StatusPending = "pending"
-const StatusCanceled = "canceled"
-const StatusSent = "sent"
+const (
+	StatusPending  = "pending"
+	StatusCanceled = "canceled"
+	StatusFailed   = "failed to send in time"
+	StatusLate     = "running late"
+	StatusSent     = "sent"
+)

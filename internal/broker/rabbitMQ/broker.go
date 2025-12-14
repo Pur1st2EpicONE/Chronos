@@ -3,8 +3,10 @@ package rabbitmq
 import (
 	"Chronos/internal/config"
 	"Chronos/internal/logger"
+	"Chronos/internal/notifier"
 	"Chronos/internal/repository"
 	"context"
+	"time"
 
 	"github.com/wb-go/wbf/rabbitmq"
 	"github.com/wb-go/wbf/retry"
@@ -24,10 +26,11 @@ type Broker struct {
 	Consumer *rabbitmq.Consumer
 	producer *rabbitmq.Publisher
 	storage  repository.Storage
+	notifier notifier.Notifier
 	client   *rabbitmq.RabbitClient
 }
 
-func NewBroker(logger logger.Logger, config config.Broker, storage repository.Storage) (*Broker, error) {
+func NewBroker(logger logger.Logger, config config.Broker, storage repository.Storage, notifier notifier.Notifier) (*Broker, error) {
 
 	client, err := rabbitmq.NewClient(rabbitmq.ClientConfig{
 
@@ -36,7 +39,7 @@ func NewBroker(logger logger.Logger, config config.Broker, storage repository.St
 		ConnectTimeout: config.ConnectTimeout,
 		Heartbeat:      config.Heartbeat,
 
-		ConsumeRetry: retry.Strategy{
+		ReconnectStrat: retry.Strategy{
 			Attempts: config.Reconnect.Attempts,
 			Delay:    config.Reconnect.Delay,
 			Backoff:  config.Reconnect.Backoff}})
@@ -59,7 +62,14 @@ func NewBroker(logger logger.Logger, config config.Broker, storage repository.St
 
 	producer := rabbitmq.NewPublisher(client, mainExchange, contentType)
 
-	b := &Broker{logger: logger, config: config, Consumer: nil, producer: producer, storage: storage, client: client}
+	b := &Broker{
+		logger:   logger,
+		config:   config,
+		Consumer: nil,
+		producer: producer,
+		storage:  storage,
+		notifier: notifier,
+		client:   client}
 
 	b.Consumer = rabbitmq.NewConsumer(client, rabbitmq.ConsumerConfig{
 		Queue:         config.QueueName,
@@ -73,5 +83,50 @@ func NewBroker(logger logger.Logger, config config.Broker, storage repository.St
 	}, func(ctx context.Context, msg amqp.Delivery) error { return b.handler(ctx, msg) })
 
 	return b, nil
+
+}
+
+func (b *Broker) sysmon(ctx context.Context) {
+
+	ticker := time.NewTicker(5 * time.Second)
+	defer ticker.Stop()
+
+	var wasUnhealthy bool
+
+	for {
+
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+		}
+
+		healthy := b.client.Healthy()
+
+		if !healthy {
+
+			if err := b.storage.MarkLate(ctx); err != nil {
+				continue
+			}
+			wasUnhealthy = true
+
+		} else {
+
+			if wasUnhealthy {
+				notifications, err := b.storage.Recover(ctx)
+				if err != nil {
+					continue
+				}
+				for _, n := range notifications {
+					if err := b.Produce(ctx, n); err != nil {
+						//
+					}
+				}
+				wasUnhealthy = false
+			}
+
+		}
+
+	}
 
 }

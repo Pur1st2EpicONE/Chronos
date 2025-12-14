@@ -4,6 +4,7 @@ import (
 	"Chronos/internal/config"
 	"Chronos/internal/logger"
 	"context"
+	"errors"
 	"net/http"
 	"time"
 )
@@ -35,7 +36,10 @@ func NewServer(logger logger.Logger, config config.Server, handler http.Handler)
 
 func (s *HttpServer) Run() error {
 	s.logger.LogInfo("server — receiving requests", "layer", "server")
-	return s.srv.ListenAndServe()
+	if err := s.srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		return err
+	}
+	return nil
 }
 
 func (s *HttpServer) Shutdown() {

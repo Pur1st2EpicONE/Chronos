@@ -15,7 +15,7 @@ import (
 func (b *Broker) Produce(ctx context.Context, notification models.Notification) error {
 
 	id := strconv.FormatInt(notification.ID, 10)
-	sendAt := time.Until(notification.SendAt)
+	sendAt := max(time.Until(notification.SendAt), 0)
 
 	return retry.DoContext(ctx, retry.Strategy{
 		Attempts: b.config.Producer.Attempts,

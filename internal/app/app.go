@@ -5,6 +5,7 @@ import (
 	"Chronos/internal/config"
 	"Chronos/internal/handler"
 	"Chronos/internal/logger"
+	"Chronos/internal/notifier"
 	"Chronos/internal/repository"
 	"Chronos/internal/server"
 	"Chronos/internal/service"
@@ -15,8 +16,6 @@ import (
 	"syscall"
 
 	"context"
-	"errors"
-	"net/http"
 
 	"github.com/wb-go/wbf/dbpg"
 )
@@ -45,7 +44,7 @@ func Boot() *App {
 		logger.LogFatal("app — failed to connect to database", err, "layer", "app")
 	}
 
-	app, err := newApp(db, logger, logFile, config)
+	app, err := wireApp(db, logger, logFile, config)
 	if err != nil {
 		logger.LogFatal("app — failed to initialize", err, "layer", "app")
 	}
@@ -63,19 +62,19 @@ func connectDB(logger logger.Logger, config config.Storage) (*dbpg.DB, error) {
 	return db, nil
 }
 
-func newApp(db *dbpg.DB, logger logger.Logger, logFile *os.File, config config.Config) (*App, error) {
+func wireApp(db *dbpg.DB, logger logger.Logger, logFile *os.File, config config.Config) (*App, error) {
 
 	ctx, cancel := newContext(logger)
+	storge := repository.NewStorage(logger, db)
+	notifier := notifier.NewNotifier(config.Notifier)
+	broker, err := broker.NewBroker(logger, config.Broker, storge, notifier)
+	service := service.NewService(broker, storge)
+	handler := handler.NewHandler(service)
+	server := server.NewServer(logger, config.Server, handler)
 
-	storage := repository.NewStorage(logger, db)
-	broker, err := broker.NewBroker(logger, config.Broker, storage)
 	if err != nil {
 		return nil, err
 	}
-
-	service := service.NewService(broker, storage)
-	handler := handler.NewHandler(service)
-	server := server.NewServer(logger, config.Server, handler)
 
 	return &App{
 		logger:  logger,
@@ -84,7 +83,7 @@ func newApp(db *dbpg.DB, logger logger.Logger, logFile *os.File, config config.C
 		server:  server,
 		ctx:     ctx,
 		cancel:  cancel,
-		storage: storage,
+		storage: storge,
 	}, nil
 
 }
@@ -108,7 +107,7 @@ func newContext(logger logger.Logger) (context.Context, context.CancelFunc) {
 func (a *App) Run() {
 
 	go func() {
-		if err := a.server.Run(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		if err := a.server.Run(); err != nil {
 			a.logger.LogFatal("server run failed", err, "layer", "app")
 		}
 	}()

@@ -1,5 +1,5 @@
 logger:
-  log_directory: ./logs
+  log_directory:
   debug_mode: true
 
 server:
@@ -26,15 +26,15 @@ broker:
   heartbeat: 10s
   reconnect:
     attempts: 3       
-    delay: 2s
-    backoff: 2.0
+    delay: 3s
+    backoff: 1 # delay * backoff
   producer:
-    attempts: 7
+    attempts: 3
     delay: 150ms
     backoff: 1.5
     message_queue_ttl: 30s
   consumer:
     consumer_tag: chronos-worker
     auto_ack: false
-    workers: 5
-    prefetch_count: 10
+    workers: 2
+    prefetch_count: 1

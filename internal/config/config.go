@@ -9,10 +9,16 @@ import (
 )
 
 type Config struct {
-	Logger  Logger  `mapstructure:"logger"`
-	Server  Server  `mapstructure:"server"`
-	Storage Storage `mapstructure:"database"`
-	Broker  Broker  `mapstructure:"broker"`
+	Logger   Logger   `mapstructure:"logger"`
+	Notifier Notifier `mapstructure:"notifier"`
+	Server   Server   `mapstructure:"server"`
+	Storage  Storage  `mapstructure:"database"`
+	Broker   Broker   `mapstructure:"broker"`
+}
+
+type Notifier struct {
+	TelegramToken    string
+	TelegramReceiver string
 }
 
 type Logger struct {
@@ -84,6 +90,9 @@ func Load() (Config, error) {
 	if err := cfg.Unmarshal(&conf); err != nil {
 		return Config{}, fmt.Errorf("unmarshal config: %w", err)
 	}
+
+	conf.Notifier.TelegramToken = os.Getenv("TG_BOT_TOKEN")
+	conf.Notifier.TelegramReceiver = os.Getenv("TG_CHAT_ID")
 
 	conf.Storage.Username = os.Getenv("DB_USER")
 	conf.Storage.Password = os.Getenv("DB_PASSWORD")

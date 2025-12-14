@@ -15,6 +15,8 @@ type Storage interface {
 	CreateNotification(ctx context.Context, notification models.Notification) (int64, error)
 	GetStatus(ctx context.Context, notificationID int64) (string, error)
 	SetStatus(ctx context.Context, notificationID int64, status string) error
+	MarkLate(ctx context.Context) error
+	Recover(ctx context.Context) ([]models.Notification, error)
 	Close()
 }
 
