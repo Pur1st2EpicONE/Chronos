@@ -2,7 +2,7 @@ CREATE TABLE IF NOT EXISTS Notifications (
     id          BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     channel     VARCHAR(20) NOT NULL,
     message     TEXT NOT NULL,
-    status      VARCHAR(20) NOT NULL DEFAULT 'pending',
+    status      VARCHAR(30) NOT NULL DEFAULT 'pending',
     send_at     TIMESTAMP WITH TIME ZONE NOT NULL,
     send_to     VARCHAR(254) NOT NULL,
     created_at  TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),

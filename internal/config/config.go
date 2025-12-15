@@ -55,10 +55,13 @@ type Producer struct {
 }
 
 type Consumer struct {
-	ConsumerTag   string `mapstructure:"consumer_tag"`
-	AutoAck       bool   `mapstructure:"auto_ack"`
-	Workers       int    `mapstructure:"workers"`
-	PrefetchCount int    `mapstructure:"prefetch_count"`
+	Attempts      int           `mapstructure:"attempts"`
+	Delay         time.Duration `mapstructure:"delay"`
+	Backoff       float64       `mapstructure:"backoff"`
+	ConsumerTag   string        `mapstructure:"consumer_tag"`
+	AutoAck       bool          `mapstructure:"auto_ack"`
+	Workers       int           `mapstructure:"workers"`
+	PrefetchCount int           `mapstructure:"prefetch_count"`
 }
 
 type Storage struct {

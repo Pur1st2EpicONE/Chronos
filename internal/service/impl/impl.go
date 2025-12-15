@@ -38,10 +38,7 @@ func (s *Service) CreateNotification(ctx context.Context, notification models.No
 		return 0, err
 	}
 
-	err = s.broker.Produce(ctx, notification)
-	if err != nil {
-		return 0, err
-	}
+	_ = s.broker.Produce(ctx, notification)
 
 	return notification.ID, nil
 

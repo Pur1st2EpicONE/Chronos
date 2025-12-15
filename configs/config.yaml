@@ -27,13 +27,16 @@ broker:
   reconnect:
     attempts: 3       
     delay: 3s
-    backoff: 1 # delay * backoff
+    backoff: 2 # delay * backoff
   producer:
     attempts: 3
     delay: 150ms
     backoff: 1.5
     message_queue_ttl: 30s
   consumer:
+    attempts: 3
+    delay: 150ms
+    backoff: 1.5
     consumer_tag: chronos-worker
     auto_ack: false
     workers: 2

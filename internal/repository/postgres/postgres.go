@@ -5,6 +5,7 @@ import (
 	"Chronos/internal/logger"
 	"Chronos/internal/models"
 	"context"
+	"fmt"
 
 	"github.com/wb-go/wbf/dbpg"
 	"github.com/wb-go/wbf/retry"
@@ -81,6 +82,10 @@ func (s *Storage) SetStatus(ctx context.Context, notificationID int64, status st
 	UPDATE Notifications
     SET status = $1, updated_at = NOW()
     WHERE id = $2;`
+
+	if status == models.StatusCanceled {
+		query = query[:len(query)-1] + fmt.Sprintf(" AND status = '%s';", models.StatusPending)
+	}
 
 	res, err := s.db.ExecWithRetry(ctx, retry.Strategy{Attempts: 3, Delay: 10, Backoff: 3}, query, status, notificationID)
 	if err != nil {

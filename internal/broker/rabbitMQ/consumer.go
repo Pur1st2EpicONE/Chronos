@@ -16,8 +16,11 @@ func (b *Broker) Consume(ctx context.Context) error {
 	if err := b.Consumer.Start(ctx); err != nil && !errors.Is(err, context.Canceled) {
 		return err
 	}
+
 	b.logger.LogInfo("consumer — stopped", "layer", "broker.rabbitMQ")
+
 	return nil
+
 }
 
 func (b *Broker) handler(ctx context.Context, msg amqp091.Delivery) error {
@@ -33,20 +36,29 @@ func (b *Broker) handler(ctx context.Context, msg amqp091.Delivery) error {
 		return err
 	}
 
-	if status == models.StatusPending {
-		status = models.StatusSent
-	} else {
-		status = models.StatusFailed
-	}
+	if status == models.StatusPending || status == models.StatusLate {
 
-	if err := b.notifier.Notify(notification); err != nil {
-		return err
-	}
+		if err := b.notifier.Notify(notification); err != nil {
+			return err
+		}
+		return b.updateStatus(ctx, notification.ID, status)
 
-	if err := b.storage.SetStatus(ctx, notification.ID, status); err != nil {
-		return err
 	}
 
 	return nil
+
+}
+
+func (b *Broker) updateStatus(ctx context.Context, notificationID int64, status string) error {
+
+	if status == models.StatusPending {
+		status = models.StatusSent
+	}
+
+	if status == models.StatusLate {
+		status = models.StatusFailed
+	}
+
+	return b.storage.SetStatus(ctx, notificationID, status)
 
 }

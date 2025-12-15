@@ -15,6 +15,6 @@ var (
 	ErrMissingSendTo         = errors.New("send_to is required")                                               // send_to is required
 	ErrInvalidEmailFormat    = errors.New("invalid email format")                                              // invalid email format
 	ErrRecipientTooLong      = errors.New("recipient exceeds maximum length")                                  // recipient exceeds maximum length
-	ErrNotificationNotFound  = errors.New("notification not found")                                            // notification not found
+	ErrNotificationNotFound  = errors.New("no pending notification found for provided ID")                     // no pending notification found for provided ID
 	ErrInternal              = errors.New("internal server error")                                             // internal server error
 )

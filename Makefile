@@ -22,7 +22,10 @@ app:
 	go run ./cmd/chronos/main.go -o app
 
 migrate-up:
-	@migrate -path ./migrations -database "postgres://${DB_USER}:${DB_PASSWORD}@localhost:5433/chronos-db?sslmode=disable" up
+	@for i in $$(seq 1 10); do \
+		migrate -path ./migrations -database "postgres://${DB_USER}:${DB_PASSWORD}@localhost:5433/chronos-db?sslmode=disable" up && exit 0; \
+		echo "Retry $$i/10..."; sleep 1; \
+	done; exit 1
 
 migrate-down:
 	@migrate -path ./migrations -database "postgres://${DB_USER}:${DB_PASSWORD}@localhost:5433/chronos-db?sslmode=disable" down

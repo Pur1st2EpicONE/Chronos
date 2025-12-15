@@ -42,6 +42,11 @@ func NewBroker(logger logger.Logger, config config.Broker, storage repository.St
 		ReconnectStrat: retry.Strategy{
 			Attempts: config.Reconnect.Attempts,
 			Delay:    config.Reconnect.Delay,
+			Backoff:  config.Reconnect.Backoff},
+
+		ConsumingStrat: retry.Strategy{
+			Attempts: config.Consumer.Attempts,
+			Delay:    config.Reconnect.Delay,
 			Backoff:  config.Reconnect.Backoff}})
 
 	if err != nil {
