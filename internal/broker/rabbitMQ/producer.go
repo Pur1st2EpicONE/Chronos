@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"strconv"
 	"time"
 
 	amqp "github.com/rabbitmq/amqp091-go"
@@ -14,7 +13,6 @@ import (
 
 func (b *Broker) Produce(ctx context.Context, notification models.Notification) error {
 
-	id := strconv.FormatInt(notification.ID, 10)
 	sendAt := max(time.Until(notification.SendAt), 0)
 
 	return retry.DoContext(ctx, retry.Strategy{
@@ -29,7 +27,7 @@ func (b *Broker) Produce(ctx context.Context, notification models.Notification) 
 			"x-expires":                 int64(sendAt.Milliseconds() + b.config.Producer.MessageQueueTTL.Milliseconds()),
 		}
 
-		err := b.client.DeclareQueue(id, mainExchange, id, false, true, true, queueArgs)
+		err := b.client.DeclareQueue(notification.ID, mainExchange, notification.ID, false, true, true, queueArgs)
 		if err != nil {
 			return err
 		}
@@ -47,7 +45,7 @@ func (b *Broker) Produce(ctx context.Context, notification models.Notification) 
 
 		pub := amqp.Publishing{ContentType: "application/json", Body: body}
 
-		if err := ch.PublishWithContext(ctx, mainExchange, id, false, false, pub); err != nil {
+		if err := ch.PublishWithContext(ctx, mainExchange, notification.ID, false, false, pub); err != nil {
 			return err
 		}
 

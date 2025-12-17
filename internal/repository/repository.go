@@ -12,10 +12,11 @@ import (
 )
 
 type Storage interface {
-	CreateNotification(ctx context.Context, notification models.Notification) (int64, error)
-	GetStatus(ctx context.Context, notificationID int64) (string, error)
-	SetStatus(ctx context.Context, notificationID int64, status string) error
-	MarkLate(ctx context.Context) error
+	CreateNotification(ctx context.Context, notification models.Notification) error
+	DeleteNotification(ctx context.Context, notificationID string) error
+	GetStatus(ctx context.Context, notificationID string) (string, error)
+	SetStatus(ctx context.Context, notificationID string, status string) error
+	MarkLates(ctx context.Context) ([]string, error)
 	Recover(ctx context.Context) ([]models.Notification, error)
 	Close()
 }

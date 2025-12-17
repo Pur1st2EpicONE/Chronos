@@ -14,6 +14,7 @@ type Config struct {
 	Server   Server   `mapstructure:"server"`
 	Storage  Storage  `mapstructure:"database"`
 	Broker   Broker   `mapstructure:"broker"`
+	Cache    Cache    `mapstructure:"cache"`
 }
 
 type Notifier struct {
@@ -40,11 +41,9 @@ type Broker struct {
 	ConnectionName string        `mapstructure:"connection_name"`
 	ConnectTimeout time.Duration `mapstructure:"connect_timeout"`
 	Heartbeat      time.Duration `mapstructure:"heartbeat"`
-
-	Reconnect Producer `mapstructure:"reconnect"`
-
-	Producer Producer `mapstructure:"producer"`
-	Consumer Consumer `mapstructure:"consumer"`
+	Reconnect      Producer      `mapstructure:"reconnect"`
+	Producer       Producer      `mapstructure:"producer"`
+	Consumer       Consumer      `mapstructure:"consumer"`
 }
 
 type Producer struct {
@@ -68,12 +67,20 @@ type Storage struct {
 	Host            string        `mapstructure:"host"`
 	Port            string        `mapstructure:"port"`
 	Username        string        `mapstructure:"username"`
-	Password        string        `mapstructure:"passwod"`
+	Password        string        `mapstructure:"password"`
 	DBName          string        `mapstructure:"dbname"`
 	SSLMode         string        `mapstructure:"sslmode"`
 	MaxOpenConns    int           `mapstructure:"max_open_conns"`
 	MaxIdleConns    int           `mapstructure:"max_idle_conns"`
 	ConnMaxLifetime time.Duration `mapstructure:"conn_max_lifetime"`
+}
+
+type Cache struct {
+	Host      string `mapstructure:"host"`
+	Port      string `mapstructure:"port"`
+	Password  string `mapstructure:"password"`
+	MaxMemory string `mapstructure:"max_memory"`
+	Policy    string `mapstructure:"policy"`
 }
 
 func Load() (Config, error) {
@@ -99,6 +106,8 @@ func Load() (Config, error) {
 
 	conf.Storage.Username = os.Getenv("DB_USER")
 	conf.Storage.Password = os.Getenv("DB_PASSWORD")
+
+	conf.Cache.Password = os.Getenv("REDIS_PASSWORD")
 
 	return conf, nil
 

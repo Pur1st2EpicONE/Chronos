@@ -50,6 +50,8 @@ func mapErrorToStatus(err error) (int, string) {
 		errors.Is(err, errs.ErrSendAtTooFar),
 		errors.Is(err, errs.ErrMissingSendTo),
 		errors.Is(err, errs.ErrInvalidEmailFormat),
+		errors.Is(err, errs.ErrCannotCancel),
+		errors.Is(err, errs.ErrAlreadyCanceled),
 		errors.Is(err, errs.ErrRecipientTooLong):
 		return http.StatusBadRequest, err.Error()
 
@@ -57,6 +59,9 @@ func mapErrorToStatus(err error) (int, string) {
 		return http.StatusNotFound, err.Error()
 
 	default:
+		if errors.Is(err, errs.ErrUrgentDeliveryFailed) {
+			return http.StatusInternalServerError, err.Error()
+		}
 		return http.StatusInternalServerError, errs.ErrInternal.Error()
 	}
 

@@ -7,7 +7,7 @@ all: up
 up: local-compose db-load migrate-up rabbit-load app
 
 local-compose:
-	@docker compose -f docker-compose.yaml up -d postgres rabbitmq 
+	@docker compose -f docker-compose.yaml up -d postgres rabbitmq redis
 
 down:
 	@docker compose -f docker-compose.yaml down

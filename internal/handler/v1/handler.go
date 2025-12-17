@@ -4,9 +4,9 @@ import (
 	"Chronos/internal/errs"
 	"Chronos/internal/models"
 	"Chronos/internal/service"
-	"strconv"
 
 	"github.com/wb-go/wbf/ginext"
+	"github.com/wb-go/wbf/helpers"
 )
 
 type Handler struct {
@@ -51,8 +51,8 @@ func (h *Handler) CreateNotification(c *ginext.Context) {
 
 func (h *Handler) GetNotification(c *ginext.Context) {
 
-	notificationID, err := strconv.ParseInt(c.Query("id"), 10, 64)
-	if err != nil || notificationID <= 0 {
+	notificationID := c.Query("id")
+	if err := helpers.ParseUUID(notificationID); err != nil {
 		respondError(c, errs.ErrInvalidNotificationID)
 		return
 	}
@@ -69,8 +69,8 @@ func (h *Handler) GetNotification(c *ginext.Context) {
 
 func (h *Handler) CancelNotification(c *ginext.Context) {
 
-	notificationID, err := strconv.ParseInt(c.Query("id"), 10, 64)
-	if err != nil || notificationID <= 0 {
+	notificationID := c.Query("id")
+	if err := helpers.ParseUUID(notificationID); err != nil {
 		respondError(c, errs.ErrInvalidNotificationID)
 		return
 	}

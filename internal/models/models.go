@@ -3,7 +3,7 @@ package models
 import "time"
 
 type Notification struct {
-	ID        int64     `json:"id"`
+	ID        string    `json:"id"`
 	Channel   string    `json:"channel"`
 	Message   string    `json:"message"`
 	Status    string    `json:"status"`

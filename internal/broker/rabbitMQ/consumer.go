@@ -5,8 +5,10 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"time"
 
 	"github.com/rabbitmq/amqp091-go"
+	"github.com/wb-go/wbf/retry"
 )
 
 func (b *Broker) Consume(ctx context.Context) error {
@@ -41,7 +43,8 @@ func (b *Broker) handler(ctx context.Context, msg amqp091.Delivery) error {
 		if err := b.notifier.Notify(notification); err != nil {
 			return err
 		}
-		return b.updateStatus(ctx, notification.ID, status)
+
+		b.updateStatus(ctx, notification.ID, notification.SendAt, status)
 
 	}
 
@@ -49,16 +52,32 @@ func (b *Broker) handler(ctx context.Context, msg amqp091.Delivery) error {
 
 }
 
-func (b *Broker) updateStatus(ctx context.Context, notificationID int64, status string) error {
+func (b *Broker) updateStatus(ctx context.Context, notificationID string, sendAt time.Time, status string) {
 
 	if status == models.StatusPending {
 		status = models.StatusSent
 	}
 
-	if status == models.StatusLate {
+	if status == models.StatusLate || time.Now().UTC().Sub(sendAt) > 1*time.Minute {
 		status = models.StatusFailed
 	}
 
-	return b.storage.SetStatus(ctx, notificationID, status)
+	if err := retry.DoContext(ctx, retry.Strategy{
+		Attempts: b.config.Consumer.Attempts,
+		Delay:    b.config.Consumer.Delay,
+		Backoff:  b.config.Consumer.Backoff,
+	}, func() error {
+		return b.cache.SetStatus(ctx, notificationID, status)
+	}); err != nil {
+		b.logger.LogError("broker — failed to update notification status in cache", err, "layer", "broker.rabbitMQ")
+	}
+
+	if err := retry.DoContext(ctx, retry.Strategy{
+		Attempts: b.config.Consumer.Attempts,
+		Delay:    b.config.Consumer.Delay,
+		Backoff:  b.config.Consumer.Backoff,
+	}, func() error { return b.storage.SetStatus(ctx, notificationID, status) }); err != nil {
+		b.logger.LogError("broker — failed to update notification status in db", err, "layer", "broker.rabbitMQ")
+	}
 
 }
