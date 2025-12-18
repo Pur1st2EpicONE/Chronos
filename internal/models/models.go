@@ -14,9 +14,10 @@ type Notification struct {
 }
 
 const (
-	StatusPending  = "pending"
-	StatusCanceled = "canceled"
-	StatusFailed   = "failed to send in time"
-	StatusLate     = "running late"
-	StatusSent     = "sent"
+	StatusPending            = "pending"
+	StatusCanceled           = "canceled"
+	StatusFailedToSendInTime = "failed to send in time"
+	StatusFailed             = "failed to send"
+	StatusLate               = "running late"
+	StatusSent               = "sent"
 )

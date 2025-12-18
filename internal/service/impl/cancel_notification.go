@@ -13,7 +13,7 @@ func (s *Service) CancelNotification(ctx context.Context, notificationID string)
 		if cachedStatus == models.StatusCanceled {
 			return errs.ErrAlreadyCanceled
 		}
-		if cachedStatus == models.StatusSent || cachedStatus == models.StatusFailed {
+		if cachedStatus == models.StatusSent || cachedStatus == models.StatusFailedToSendInTime {
 			return errs.ErrCannotCancel
 		}
 	}

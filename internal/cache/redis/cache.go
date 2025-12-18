@@ -29,17 +29,20 @@ func Connect(logger logger.Logger, config config.Cache) (*Cache, error) {
 }
 
 func (c *Cache) SetStatus(ctx context.Context, key string, value any) error {
-	return c.client.SetWithExpirationAndRetry(ctx, retry.Strategy{Attempts: 3, Delay: 2, Backoff: 2}, key, value, time.Hour)
+	return c.client.SetWithExpirationAndRetry(ctx, retry.Strategy{Attempts: 3, Delay: 2, Backoff: 2}, key, value, 2*time.Minute)
 }
 
 func (c *Cache) GetStatus(ctx context.Context, key string) (string, error) {
+	if err := c.client.Expire(ctx, key, 2*time.Minute); err != nil {
+		return "", err
+	}
 	return c.client.GetWithRetry(ctx, retry.Strategy{Attempts: 3, Delay: 2, Backoff: 2}, key)
 }
 
 func (c *Cache) MarkLates(ctx context.Context, lates []string) {
 	if len(lates) > 0 {
 		for _, key := range lates {
-			if err := c.client.SetWithExpirationAndRetry(ctx, retry.Strategy{Attempts: 3, Delay: 2, Backoff: 2}, key, models.StatusLate, time.Hour); err != nil {
+			if err := c.client.SetWithExpirationAndRetry(ctx, retry.Strategy{Attempts: 3, Delay: 2, Backoff: 2}, key, models.StatusLate, 2*time.Minute); err != nil {
 				c.logger.LogError("redis — failed to set notification status", err, "layer", "cache.redis")
 			}
 		}

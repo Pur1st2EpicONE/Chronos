@@ -44,6 +44,6 @@ broker:
     delay: 150ms
     backoff: 1.5
     consumer_tag: chronos-worker
-    auto_ack: false
+    auto_ack: true
     workers: 2
     prefetch_count: 1

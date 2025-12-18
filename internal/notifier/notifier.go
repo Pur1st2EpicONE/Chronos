@@ -5,6 +5,7 @@ import (
 	"Chronos/internal/models"
 	"fmt"
 	"net/http"
+	"net/smtp"
 	"net/url"
 )
 
@@ -19,12 +20,20 @@ func NewNotifier(config config.Notifier) Notifier {
 type Sender struct {
 	telegramToken    string
 	telegramReceiver string
+	emailSender      string
+	emailPassword    string
+	emailSMTP        string
+	emailSMTPAddr    string
 }
 
 func newSender(config config.Notifier) *Sender {
 	return &Sender{
 		telegramToken:    config.TelegramToken,
 		telegramReceiver: config.TelegramReceiver,
+		emailSender:      config.EmailSender,
+		emailPassword:    config.EmailPassword,
+		emailSMTP:        config.EmailSMTP,
+		emailSMTPAddr:    config.EmailSMTPAddr,
 	}
 }
 
@@ -35,10 +44,22 @@ func (s *Sender) Notify(notification models.Notification) error {
 		if err := s.sendTelegram(notification.Message); err != nil {
 			return err
 		}
+	case "email":
+		var test []string
+		test = append(test, notification.SendTo)
+		if err := s.sendEmail(test, "test email", "should pass"); err != nil {
+			return err
+		}
 	}
 
 	return nil
 
+}
+
+func (s *Sender) sendEmail(to []string, subject string, body string) error {
+	auth := smtp.PlainAuth("", s.emailSender, s.emailPassword, s.emailSMTP)
+	message := "Subject: " + subject + "\n" + body
+	return smtp.SendMail(s.emailSMTPAddr, auth, s.emailSender, to, []byte(message))
 }
 
 func (s *Sender) sendTelegram(message string) error {

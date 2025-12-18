@@ -18,6 +18,7 @@ type Storage interface {
 	SetStatus(ctx context.Context, notificationID string, status string) error
 	MarkLates(ctx context.Context) ([]string, error)
 	Recover(ctx context.Context) ([]models.Notification, error)
+	Cleanup(ctx context.Context)
 	Close()
 }
 

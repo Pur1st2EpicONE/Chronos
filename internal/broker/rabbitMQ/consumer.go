@@ -13,12 +13,14 @@ import (
 
 func (b *Broker) Consume(ctx context.Context) error {
 
+	b.storage.Cleanup(ctx)
 	go b.sysmon(ctx)
 
 	if err := b.Consumer.Start(ctx); err != nil && !errors.Is(err, context.Canceled) {
 		return err
 	}
 
+	b.storage.Cleanup(ctx)
 	b.logger.LogInfo("consumer — stopped", "layer", "broker.rabbitMQ")
 
 	return nil
@@ -38,9 +40,12 @@ func (b *Broker) handler(ctx context.Context, msg amqp091.Delivery) error {
 		return err
 	}
 
-	if status == models.StatusPending || status == models.StatusLate {
+	if status != models.StatusCanceled {
 
 		if err := b.notifier.Notify(notification); err != nil {
+			if status != models.StatusFailed {
+				b.updateStatus(ctx, notification.ID, notification.SendAt, models.StatusFailed)
+			}
 			return err
 		}
 
@@ -59,7 +64,7 @@ func (b *Broker) updateStatus(ctx context.Context, notificationID string, sendAt
 	}
 
 	if status == models.StatusLate || time.Now().UTC().Sub(sendAt) > 1*time.Minute {
-		status = models.StatusFailed
+		status = models.StatusFailedToSendInTime
 	}
 
 	if err := retry.DoContext(ctx, retry.Strategy{

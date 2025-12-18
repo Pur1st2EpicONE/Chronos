@@ -11,3 +11,4 @@ CREATE TABLE IF NOT EXISTS Notifications (
 );
 
 CREATE INDEX IF NOT EXISTS idx_notifications_uuid ON Notifications(uuid);
+CREATE INDEX IF NOT EXISTS idx_notifications_status ON Notifications(status) WHERE status = 'canceled';

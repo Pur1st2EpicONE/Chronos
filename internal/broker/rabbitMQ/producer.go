@@ -29,12 +29,12 @@ func (b *Broker) Produce(ctx context.Context, notification models.Notification) 
 
 		err := b.client.DeclareQueue(notification.ID, mainExchange, notification.ID, false, true, true, queueArgs)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to declare queue: %w", err)
 		}
 
 		ch, err := b.client.GetChannel()
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to get channel: %w", err)
 		}
 		defer ch.Close()
 
@@ -46,7 +46,7 @@ func (b *Broker) Produce(ctx context.Context, notification models.Notification) 
 		pub := amqp.Publishing{ContentType: "application/json", Body: body}
 
 		if err := ch.PublishWithContext(ctx, mainExchange, notification.ID, false, false, pub); err != nil {
-			return err
+			return fmt.Errorf("failed to publish with context: %w", err)
 		}
 
 		return nil

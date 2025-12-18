@@ -20,6 +20,10 @@ type Config struct {
 type Notifier struct {
 	TelegramToken    string
 	TelegramReceiver string
+	EmailSender      string
+	EmailPassword    string
+	EmailSMTP        string
+	EmailSMTPAddr    string
 }
 
 type Logger struct {
@@ -103,6 +107,11 @@ func Load() (Config, error) {
 
 	conf.Notifier.TelegramToken = os.Getenv("TG_BOT_TOKEN")
 	conf.Notifier.TelegramReceiver = os.Getenv("TG_CHAT_ID")
+
+	conf.Notifier.EmailSender = os.Getenv("GOOGLE_APP_EMAIL")
+	conf.Notifier.EmailPassword = os.Getenv("GOOGLE_APP_PASSWORD")
+	conf.Notifier.EmailSMTP = os.Getenv("GOOGLE_APP_SMTP")
+	conf.Notifier.EmailSMTPAddr = os.Getenv("SMTP_ADDR")
 
 	conf.Storage.Username = os.Getenv("DB_USER")
 	conf.Storage.Password = os.Getenv("DB_PASSWORD")
