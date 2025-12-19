@@ -69,15 +69,24 @@ type Consumer struct {
 }
 
 type Storage struct {
-	Host            string        `mapstructure:"host"`
-	Port            string        `mapstructure:"port"`
-	Username        string        `mapstructure:"username"`
-	Password        string        `mapstructure:"password"`
-	DBName          string        `mapstructure:"dbname"`
-	SSLMode         string        `mapstructure:"sslmode"`
-	MaxOpenConns    int           `mapstructure:"max_open_conns"`
-	MaxIdleConns    int           `mapstructure:"max_idle_conns"`
-	ConnMaxLifetime time.Duration `mapstructure:"conn_max_lifetime"`
+	Host               string        `mapstructure:"host"`
+	Port               string        `mapstructure:"port"`
+	Username           string        `mapstructure:"username"`
+	Password           string        `mapstructure:"password"`
+	DBName             string        `mapstructure:"dbname"`
+	SSLMode            string        `mapstructure:"sslmode"`
+	MaxOpenConns       int           `mapstructure:"max_open_conns"`
+	MaxIdleConns       int           `mapstructure:"max_idle_conns"`
+	ConnMaxLifetime    time.Duration `mapstructure:"conn_max_lifetime"`
+	RecoverLimit       int           `mapstructure:"recover_limit"`
+	QueryRetryStrategy Producer      `mapstructure:"query_retry_strategy"`
+	RetentionStrategy  Retention     `mapstructure:"retention_strategy"`
+}
+
+type Retention struct {
+	Canceled  time.Duration
+	Completed time.Duration
+	Failed    time.Duration
 }
 
 type Cache struct {
@@ -106,6 +115,19 @@ func Load() (Config, error) {
 		return Config{}, fmt.Errorf("unmarshal config: %w", err)
 	}
 
+	loadEnvs(&conf)
+
+	return conf, nil
+
+}
+
+func loadEnvs(conf *Config) {
+
+	conf.Storage.Username = os.Getenv("DB_USER")
+	conf.Storage.Password = os.Getenv("DB_PASSWORD")
+
+	conf.Cache.Password = os.Getenv("REDIS_PASSWORD")
+
 	conf.Notifier.TelegramToken = os.Getenv("TG_BOT_TOKEN")
 	conf.Notifier.TelegramReceiver = os.Getenv("TG_CHAT_ID")
 
@@ -113,12 +135,5 @@ func Load() (Config, error) {
 	conf.Notifier.EmailPassword = os.Getenv("GOOGLE_APP_PASSWORD")
 	conf.Notifier.EmailSMTP = os.Getenv("GOOGLE_APP_SMTP")
 	conf.Notifier.EmailSMTPAddr = os.Getenv("SMTP_ADDR")
-
-	conf.Storage.Username = os.Getenv("DB_USER")
-	conf.Storage.Password = os.Getenv("DB_PASSWORD")
-
-	conf.Cache.Password = os.Getenv("REDIS_PASSWORD")
-
-	return conf, nil
 
 }

@@ -29,6 +29,11 @@ func (b *Broker) Produce(ctx context.Context, notification models.Notification) 
 
 		err := b.client.DeclareQueue(notification.ID, mainExchange, notification.ID, false, true, true, queueArgs)
 		if err != nil {
+			if amqpErr, ok := err.(*amqp.Error); ok && amqpErr.Code == amqp.PreconditionFailed { // exception 406
+				b.logger.Debug("producer — recovered notification is already in queue, skipping",
+					"notificationID", notification.ID, "layer", "broker.rabbitMQ")
+				return nil
+			}
 			return fmt.Errorf("failed to declare queue: %w", err)
 		}
 
@@ -36,14 +41,14 @@ func (b *Broker) Produce(ctx context.Context, notification models.Notification) 
 		if err != nil {
 			return fmt.Errorf("failed to get channel: %w", err)
 		}
-		defer ch.Close()
+		defer func() { _ = ch.Close() }()
 
 		body, err := json.Marshal(notification)
 		if err != nil {
 			return fmt.Errorf("failed to marshal notification to json: %w", err)
 		}
 
-		pub := amqp.Publishing{ContentType: "application/json", Body: body}
+		pub := amqp.Publishing{ContentType: contentType, Body: body}
 
 		if err := ch.PublishWithContext(ctx, mainExchange, notification.ID, false, false, pub); err != nil {
 			return fmt.Errorf("failed to publish with context: %w", err)

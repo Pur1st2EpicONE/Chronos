@@ -81,7 +81,7 @@ func connectCache(logger logger.Logger, config config.Cache) (cache.Cache, error
 func wireApp(db *dbpg.DB, cache cache.Cache, logger logger.Logger, logFile *os.File, config config.Config) (*App, error) {
 
 	ctx, cancel := newContext(logger)
-	storge := repository.NewStorage(logger, db)
+	storge := repository.NewStorage(logger, config.Storage, db)
 	notifier := notifier.NewNotifier(config.Notifier)
 	broker, err := broker.NewBroker(logger, config.Broker, cache, storge, notifier)
 	service := service.NewService(logger, broker, cache, storge)

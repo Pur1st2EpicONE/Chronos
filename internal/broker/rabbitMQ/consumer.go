@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/rabbitmq/amqp091-go"
@@ -13,7 +14,6 @@ import (
 
 func (b *Broker) Consume(ctx context.Context) error {
 
-	b.storage.Cleanup(ctx)
 	go b.sysmon(ctx)
 
 	if err := b.Consumer.Start(ctx); err != nil && !errors.Is(err, context.Canceled) {
@@ -31,7 +31,7 @@ func (b *Broker) handler(ctx context.Context, msg amqp091.Delivery) error {
 	var notification models.Notification
 
 	if err := json.Unmarshal(msg.Body, &notification); err != nil {
-		return err
+		return fmt.Errorf("failed to unmarshal json: %w", err)
 	}
 
 	status, err := b.storage.GetStatus(ctx, notification.ID)
@@ -62,7 +62,7 @@ func (b *Broker) updateStatus(ctx context.Context, notificationID string, sendAt
 		status = models.StatusSent
 	}
 
-	if status == models.StatusLate || time.Now().UTC().Sub(sendAt) > 1*time.Minute {
+	if status == models.StatusLate || time.Now().UTC().Sub(sendAt) > time.Minute {
 		status = models.StatusFailedToSendInTime
 	}
 
@@ -73,7 +73,8 @@ func (b *Broker) updateStatus(ctx context.Context, notificationID string, sendAt
 	}, func() error {
 		return b.cache.SetStatus(ctx, notificationID, status)
 	}); err != nil {
-		b.logger.LogError("broker — failed to update notification status in cache", err, "layer", "broker.rabbitMQ")
+		b.logger.LogError("broker — failed to update notification status in cache",
+			err, "notificationID", notificationID, "layer", "broker.rabbitMQ")
 	}
 
 	if err := retry.DoContext(ctx, retry.Strategy{
@@ -81,7 +82,8 @@ func (b *Broker) updateStatus(ctx context.Context, notificationID string, sendAt
 		Delay:    b.config.Consumer.Delay,
 		Backoff:  b.config.Consumer.Backoff,
 	}, func() error { return b.storage.SetStatus(ctx, notificationID, status) }); err != nil {
-		b.logger.LogError("broker — failed to update notification status in db", err, "layer", "broker.rabbitMQ")
+		b.logger.LogError("broker — failed to update notification status in db",
+			err, "notificationID", notificationID, "layer", "broker.rabbitMQ")
 	}
 
 }

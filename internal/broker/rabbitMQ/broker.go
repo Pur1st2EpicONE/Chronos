@@ -96,6 +96,7 @@ func NewBroker(logger logger.Logger, config config.Broker, cache cache.Cache, st
 
 func (b *Broker) sysmon(ctx context.Context) {
 
+	b.storage.Cleanup(ctx)
 	b.recover(ctx)
 
 	cleaner := time.NewTicker(b.config.CleanupInterval)
@@ -123,6 +124,7 @@ func (b *Broker) sysmon(ctx context.Context) {
 			lates, err := b.storage.MarkLates(ctx)
 			if err != nil {
 				b.logger.LogError("broker — failed to mark late notifications in db", err, "layer", "broker.rabbitMQ")
+				continue
 			}
 			if err := b.cache.MarkLates(ctx, lates); err != nil {
 				b.logger.LogError("broker — failed to mark late notifications in cache", err, "layer", "broker.rabbitMQ")

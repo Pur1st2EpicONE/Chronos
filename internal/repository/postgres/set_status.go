@@ -25,7 +25,11 @@ func (s *Storage) SetStatus(ctx context.Context, notificationID string, status s
 		args = append(args, models.StatusPending, models.StatusLate)
 	}
 
-	res, err := s.db.ExecWithRetry(ctx, retry.Strategy{Attempts: 3, Delay: 10, Backoff: 3}, query, args...)
+	res, err := s.db.ExecWithRetry(ctx, retry.Strategy{
+		Attempts: s.config.QueryRetryStrategy.Attempts,
+		Delay:    s.config.QueryRetryStrategy.Delay,
+		Backoff:  s.config.QueryRetryStrategy.Backoff}, query, args...)
+
 	if err != nil {
 		return fmt.Errorf("failed to execute query: %w", err)
 	}

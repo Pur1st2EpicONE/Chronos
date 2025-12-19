@@ -16,7 +16,11 @@ func (s *Storage) GetStatus(ctx context.Context, notificationID string) (string,
     FROM Notifications
     WHERE uuid = $1;`
 
-	row, err := s.db.QueryRowWithRetry(ctx, retry.Strategy{Attempts: 3, Delay: 10, Backoff: 3}, query, notificationID)
+	row, err := s.db.QueryRowWithRetry(ctx, retry.Strategy{
+		Attempts: s.config.QueryRetryStrategy.Attempts,
+		Delay:    s.config.QueryRetryStrategy.Delay,
+		Backoff:  s.config.QueryRetryStrategy.Backoff}, query, notificationID)
+
 	if err != nil {
 		return "", fmt.Errorf("failed to execute query: %w", err)
 	}

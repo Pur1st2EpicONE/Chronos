@@ -12,20 +12,20 @@ func (s *Storage) CreateNotification(ctx context.Context, notification models.No
 	query := `
 
 	INSERT INTO Notifications (uuid, channel, message, status, send_at, send_to, updated_at) 
-	VALUES ($1, $2, $3, $4, $5, $6, $7, $8);`
+	VALUES ($1, $2, $3, $4, $5, $6, $7);`
 
-	_, err := s.db.ExecWithRetry(
-		ctx,
-		retry.Strategy{Attempts: 3, Delay: 10, Backoff: 3},
-		query,
+	_, err := s.db.ExecWithRetry(ctx, retry.Strategy{
+		Attempts: s.config.QueryRetryStrategy.Attempts,
+		Delay:    s.config.QueryRetryStrategy.Delay,
+		Backoff:  s.config.QueryRetryStrategy.Backoff}, query,
+
 		notification.ID,
 		notification.Channel,
 		notification.Message,
 		notification.Status,
 		notification.SendAt,
 		notification.SendTo,
-		notification.UpdatedAt,
-	)
+		notification.UpdatedAt)
 
 	return err
 

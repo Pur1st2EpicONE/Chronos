@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"Chronos/internal/config"
 	"Chronos/internal/logger"
 
 	"github.com/wb-go/wbf/dbpg"
@@ -9,10 +10,11 @@ import (
 type Storage struct {
 	db     *dbpg.DB
 	logger logger.Logger
+	config config.Storage
 }
 
-func NewStorage(logger logger.Logger, db *dbpg.DB) *Storage {
-	return &Storage{db: db, logger: logger}
+func NewStorage(logger logger.Logger, config config.Storage, db *dbpg.DB) *Storage {
+	return &Storage{db: db, logger: logger, config: config}
 }
 
 func (s *Storage) Close() {

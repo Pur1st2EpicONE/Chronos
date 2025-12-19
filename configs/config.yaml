@@ -23,17 +23,28 @@ database:
   max_open_conns: 57
   max_idle_conns: 25
   conn_max_lifetime: 1h
+  recover_limit: 1000
+
+  query_retry_strategy:
+    attempts: 3
+    delay: 3s
+    backoff: 2
+
+  retention_strategy:
+    canceled: 10s
+    completed: 10s  
+    failed: 10s    
 
 broker:
   url: amqp://guest:guest@localhost:5672/
   queue_name: main
   connection_name: chronos-broker
   connect_timeout: 10s
-  cleanup_interval: 1m
+  cleanup_interval: 5s
   healthcheck_interval: 5s
-
+  
   reconnect:
-    attempts: 3       
+    attempts: 3
     delay: 3s
     backoff: 2 # delay * backoff
 
@@ -51,4 +62,3 @@ broker:
     auto_ack: true
     workers: 2
     prefetch_count: 1
-

@@ -22,8 +22,8 @@ type Storage interface {
 	Close()
 }
 
-func NewStorage(logger logger.Logger, db *dbpg.DB) Storage {
-	return postgres.NewStorage(logger, db)
+func NewStorage(logger logger.Logger, config config.Storage, db *dbpg.DB) Storage {
+	return postgres.NewStorage(logger, config, db)
 }
 
 func ConnectDB(config config.Storage) (*dbpg.DB, error) {
