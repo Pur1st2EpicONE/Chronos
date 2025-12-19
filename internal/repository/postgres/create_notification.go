@@ -11,7 +11,7 @@ func (s *Storage) CreateNotification(ctx context.Context, notification models.No
 
 	query := `
 
-	INSERT INTO Notifications (uuid, channel, message, status, send_at, send_to, created_at, updated_at) 
+	INSERT INTO Notifications (uuid, channel, message, status, send_at, send_to, updated_at) 
 	VALUES ($1, $2, $3, $4, $5, $6, $7, $8);`
 
 	_, err := s.db.ExecWithRetry(
@@ -24,7 +24,6 @@ func (s *Storage) CreateNotification(ctx context.Context, notification models.No
 		notification.Status,
 		notification.SendAt,
 		notification.SendTo,
-		notification.CreatedAt,
 		notification.UpdatedAt,
 	)
 

@@ -20,7 +20,6 @@ func (b *Broker) Consume(ctx context.Context) error {
 		return err
 	}
 
-	b.storage.Cleanup(ctx)
 	b.logger.LogInfo("consumer — stopped", "layer", "broker.rabbitMQ")
 
 	return nil

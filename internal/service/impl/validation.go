@@ -30,14 +30,15 @@ func validateCreate(notification models.Notification) error {
 
 }
 
-func validateChannel(ch string) error {
+func validateChannel(channel string) error {
 
-	if ch == "" {
+	if channel == "" {
 		return errs.ErrMissingChannel
 	}
 
-	lc := strings.ToLower(ch)
-	if lc != "telegram" && lc != "email" {
+	ch := strings.ToLower(channel)
+
+	if ch != "telegram" && ch != "email" {
 		return errs.ErrUnsupportedChannel
 	}
 
@@ -87,12 +88,7 @@ func validateSendTo(channel string, recipient string) error {
 
 	if channel == "email" {
 		addr, err := mail.ParseAddress(recipient)
-		if err != nil {
-			return errs.ErrInvalidEmailFormat
-		}
-
-		domain := strings.Split(addr.Address, "@")[1]
-		if !strings.Contains(domain, ".") {
+		if err != nil || !strings.Contains(strings.Split(addr.Address, "@")[1], ".") {
 			return errs.ErrInvalidEmailFormat
 		}
 	}

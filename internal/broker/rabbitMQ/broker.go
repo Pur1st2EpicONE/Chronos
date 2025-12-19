@@ -7,6 +7,7 @@ import (
 	"Chronos/internal/notifier"
 	"Chronos/internal/repository"
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/wb-go/wbf/rabbitmq"
@@ -39,7 +40,6 @@ func NewBroker(logger logger.Logger, config config.Broker, cache cache.Cache, st
 		URL:            config.URL,
 		ConnectionName: config.ConnectionName,
 		ConnectTimeout: config.ConnectTimeout,
-		Heartbeat:      config.Heartbeat,
 
 		ReconnectStrat: retry.Strategy{
 			Attempts: config.Reconnect.Attempts,
@@ -52,19 +52,19 @@ func NewBroker(logger logger.Logger, config config.Broker, cache cache.Cache, st
 			Backoff:  config.Reconnect.Backoff}})
 
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create new client: %w", err)
 	}
 
 	err = client.DeclareExchange(mainExchange, exchangeKind, true, false, false, nil)
 	if err != nil {
 		client.Close()
-		return nil, err
+		return nil, fmt.Errorf("failed to declare exchange: %w", err)
 	}
 
 	err = client.DeclareQueue(config.QueueName, mainExchange, config.QueueName, true, false, true, nil)
 	if err != nil {
 		client.Close()
-		return nil, err
+		return nil, fmt.Errorf("failed to declare queue: %w", err)
 	}
 
 	producer := rabbitmq.NewPublisher(client, mainExchange, contentType)
@@ -98,8 +98,11 @@ func (b *Broker) sysmon(ctx context.Context) {
 
 	b.recover(ctx)
 
-	ticker := time.NewTicker(5 * time.Second)
-	defer ticker.Stop()
+	cleaner := time.NewTicker(b.config.CleanupInterval)
+	healthcheck := time.NewTicker(b.config.HealthcheckInterval)
+
+	defer cleaner.Stop()
+	defer healthcheck.Stop()
 
 	var wasUnhealthy bool
 
@@ -108,7 +111,9 @@ func (b *Broker) sysmon(ctx context.Context) {
 		select {
 		case <-ctx.Done():
 			return
-		case <-ticker.C:
+		case <-cleaner.C:
+			b.storage.Cleanup(ctx)
+		case <-healthcheck.C:
 		}
 
 		healthy := b.client.Healthy()
@@ -119,7 +124,9 @@ func (b *Broker) sysmon(ctx context.Context) {
 			if err != nil {
 				b.logger.LogError("broker — failed to mark late notifications in db", err, "layer", "broker.rabbitMQ")
 			}
-			b.cache.MarkLates(ctx, lates)
+			if err := b.cache.MarkLates(ctx, lates); err != nil {
+				b.logger.LogError("broker — failed to mark late notifications in cache", err, "layer", "broker.rabbitMQ")
+			}
 			continue
 		}
 

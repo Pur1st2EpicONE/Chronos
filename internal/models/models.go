@@ -9,7 +9,6 @@ type Notification struct {
 	Status    string    `json:"status"`
 	SendAt    time.Time `json:"send_at"`
 	SendTo    string    `json:"send_to"`
-	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
 

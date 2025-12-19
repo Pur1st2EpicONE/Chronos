@@ -40,14 +40,15 @@ type Server struct {
 }
 
 type Broker struct {
-	URL            string        `mapstructure:"url"`
-	QueueName      string        `mapstructure:"queue_name"`
-	ConnectionName string        `mapstructure:"connection_name"`
-	ConnectTimeout time.Duration `mapstructure:"connect_timeout"`
-	Heartbeat      time.Duration `mapstructure:"heartbeat"`
-	Reconnect      Producer      `mapstructure:"reconnect"`
-	Producer       Producer      `mapstructure:"producer"`
-	Consumer       Consumer      `mapstructure:"consumer"`
+	URL                 string        `mapstructure:"url"`
+	QueueName           string        `mapstructure:"queue_name"`
+	ConnectionName      string        `mapstructure:"connection_name"`
+	ConnectTimeout      time.Duration `mapstructure:"connect_timeout"`
+	Reconnect           Producer      `mapstructure:"reconnect"`
+	Producer            Producer      `mapstructure:"producer"`
+	Consumer            Consumer      `mapstructure:"consumer"`
+	CleanupInterval     time.Duration `mapstructure:"cleanup_interval"`
+	HealthcheckInterval time.Duration `mapstructure:"healthcheck_interval"`
 }
 
 type Producer struct {

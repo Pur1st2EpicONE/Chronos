@@ -39,14 +39,15 @@ func (c *Cache) GetStatus(ctx context.Context, key string) (string, error) {
 	return c.client.GetWithRetry(ctx, retry.Strategy{Attempts: 3, Delay: 2, Backoff: 2}, key)
 }
 
-func (c *Cache) MarkLates(ctx context.Context, lates []string) {
+func (c *Cache) MarkLates(ctx context.Context, lates []string) error {
 	if len(lates) > 0 {
 		for _, key := range lates {
 			if err := c.client.SetWithExpirationAndRetry(ctx, retry.Strategy{Attempts: 3, Delay: 2, Backoff: 2}, key, models.StatusLate, 2*time.Minute); err != nil {
-				c.logger.LogError("redis — failed to set notification status", err, "layer", "cache.redis")
+				return err
 			}
 		}
 	}
+	return nil
 }
 
 func (c *Cache) Close() {

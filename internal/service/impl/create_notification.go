@@ -18,6 +18,7 @@ func (s *Service) CreateNotification(ctx context.Context, notification models.No
 	initialize(&notification)
 
 	if err := s.storage.CreateNotification(ctx, notification); err != nil {
+		s.logger.LogError("service — failed to create notification", err, "layer", "service.impl")
 		return "", err
 	}
 
@@ -43,7 +44,6 @@ func (s *Service) CreateNotification(ctx context.Context, notification models.No
 
 func initialize(notification *models.Notification) {
 	now := time.Now().UTC()
-	notification.CreatedAt = now
 	notification.UpdatedAt = now
 	notification.ID = helpers.CreateUUID()
 	notification.Status = models.StatusPending

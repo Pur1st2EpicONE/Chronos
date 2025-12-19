@@ -10,7 +10,7 @@ import (
 type Cache interface {
 	SetStatus(ctx context.Context, key string, value any) error
 	GetStatus(ctx context.Context, key string) (string, error)
-	MarkLates(ctx context.Context, lates []string)
+	MarkLates(ctx context.Context, lates []string) error
 	Close()
 }
 

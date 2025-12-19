@@ -4,6 +4,7 @@ import (
 	"Chronos/internal/errs"
 	"Chronos/internal/models"
 	"context"
+	"fmt"
 
 	"github.com/wb-go/wbf/retry"
 )
@@ -26,12 +27,12 @@ func (s *Storage) SetStatus(ctx context.Context, notificationID string, status s
 
 	res, err := s.db.ExecWithRetry(ctx, retry.Strategy{Attempts: 3, Delay: 10, Backoff: 3}, query, args...)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to execute query: %w", err)
 	}
 
 	rows, err := res.RowsAffected()
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get number of affected rows: %w", err)
 	}
 
 	if rows == 0 {

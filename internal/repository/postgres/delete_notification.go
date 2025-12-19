@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"Chronos/internal/errs"
 	"context"
 	"fmt"
 
@@ -16,17 +17,18 @@ func (s *Storage) DeleteNotification(ctx context.Context, notificationID string)
 
 	result, err := s.db.ExecWithRetry(ctx, retry.Strategy{Attempts: 3, Delay: 10, Backoff: 3}, query, notificationID)
 	if err != nil {
-		return fmt.Errorf("failed to delete notification: %w", err)
+		return fmt.Errorf("failed to execute query: %w", err)
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
-		return fmt.Errorf("failed to get rows affected: %w", err)
+		return fmt.Errorf("failed to get number of affected rows: %w", err)
 	}
 
 	if rowsAffected == 0 {
-		return fmt.Errorf("notification not found")
+		return errs.ErrNotificationNotFound
 	}
 
 	return nil
+
 }

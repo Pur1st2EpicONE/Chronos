@@ -3,6 +3,7 @@ package postgres
 import (
 	"Chronos/internal/models"
 	"context"
+	"fmt"
 )
 
 func (s *Storage) Recover(ctx context.Context) ([]models.Notification, error) {
@@ -21,7 +22,7 @@ func (s *Storage) Recover(ctx context.Context) ([]models.Notification, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	for rows.Next() {
 		var n models.Notification
@@ -32,15 +33,10 @@ func (s *Storage) Recover(ctx context.Context) ([]models.Notification, error) {
 			&n.Status,
 			&n.SendAt,
 			&n.SendTo,
-			&n.CreatedAt,
 			&n.UpdatedAt); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to scan row: %w", err)
 		}
 		notifications = append(notifications, n)
-	}
-
-	if err := rows.Err(); err != nil {
-		return nil, err
 	}
 
 	return notifications, nil
