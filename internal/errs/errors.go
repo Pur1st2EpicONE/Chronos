@@ -14,6 +14,8 @@ var (
 	ErrSendAtTooFar          = errors.New("send_at is too far in the future")                                                         // send_at is too far in the future
 	ErrMissingSendTo         = errors.New("send_to is required")                                                                      // send_to is required
 	ErrInvalidEmailFormat    = errors.New("invalid email format")                                                                     // invalid email format
+	ErrMissingEmailSubject   = errors.New("email subject is required")                                                                // email subject is required
+	ErrEmailSubjectTooLong   = errors.New("email subject is too long")                                                                // email subject is too long
 	ErrRecipientTooLong      = errors.New("recipient exceeds maximum length")                                                         // recipient exceeds maximum length
 	ErrNotificationNotFound  = errors.New("notification with given ID not found")                                                     // notification with given ID not found
 	ErrAlreadyCanceled       = errors.New("notification is already canceled")                                                         // notification is already canceled

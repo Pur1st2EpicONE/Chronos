@@ -16,6 +16,7 @@ func (s *Service) GetStatus(ctx context.Context, notificationID string) (string,
 			if errors.Is(err, errs.ErrNotificationNotFound) {
 				s.logger.Debug("service — notification status fetched from DB", "notificationID", notificationID, "layer", "service.impl")
 			}
+			s.logger.LogError("service — failed to get notification status from DB", err, "notificationID", notificationID, "layer", "service.impl")
 			return "", err
 		}
 

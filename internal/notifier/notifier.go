@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/smtp"
 	"net/url"
+	"strings"
 )
 
 type Notifier interface {
@@ -39,27 +40,34 @@ func newSender(config config.Notifier) *Sender {
 
 func (s *Sender) Notify(notification models.Notification) error {
 
-	switch notification.Channel {
-	case "telegram":
+	switch strings.ToLower(notification.Channel) {
+	case models.Telegram:
 		if err := s.sendTelegram(notification.Message); err != nil {
-			return err
+			return fmt.Errorf("unable to send Telegram notification: %w", err)
 		}
-	case "email":
-		var test []string
-		test = append(test, notification.SendTo)
-		if err := s.sendEmail(test, "test email", "should pass"); err != nil {
-			return err
+	case models.Email:
+		if err := s.sendEmail(notification.SendTo, notification.Subject, notification.Message); err != nil {
+			return fmt.Errorf("unable to send Email notification: %w", err)
 		}
+	case models.Stdout:
+		if _, err := fmt.Println(notification.Message); err != nil {
+			return fmt.Errorf("unable to print notification to stdout: %w", err)
+		}
+	default:
+		return fmt.Errorf("unsupported notification channel: %s", notification.Channel)
 	}
 
 	return nil
 
 }
 
-func (s *Sender) sendEmail(to []string, subject string, body string) error {
+func (s *Sender) sendEmail(sendTo []string, subject string, body string) error {
 	auth := smtp.PlainAuth("", s.emailSender, s.emailPassword, s.emailSMTP)
-	message := "Subject: " + subject + "\n" + body
-	return smtp.SendMail(s.emailSMTPAddr, auth, s.emailSender, to, []byte(message))
+	message := []byte("Subject: " + subject + "\n" + body)
+	if err := smtp.SendMail(s.emailSMTPAddr, auth, s.emailSender, sendTo, message); err != nil {
+		return fmt.Errorf("failed to send email to %v via SMTP server %s: %w", sendTo, s.emailSMTPAddr, err)
+	}
+	return nil
 }
 
 func (s *Sender) sendTelegram(message string) error {
@@ -74,14 +82,12 @@ func (s *Sender) sendTelegram(message string) error {
 
 	resp, err := client.PostForm(apiURL, data)
 	if err != nil {
-		fmt.Println("err post form", err)
-		return err
+		return fmt.Errorf("failed to POST form to Telegram API %s: %w", apiURL, err)
 	}
 	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
-		fmt.Println("err status code", err)
-		return fmt.Errorf("telegram API returned status %s", resp.Status)
+		return fmt.Errorf("Telegram API returned non-OK status %s for chat_id %s", resp.Status, s.telegramReceiver)
 	}
 
 	return nil

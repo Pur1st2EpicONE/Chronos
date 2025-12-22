@@ -9,6 +9,8 @@ import (
 	"github.com/wb-go/wbf/helpers"
 )
 
+const brokerRecoveryWindow = time.Hour
+
 func (s *Service) CreateNotification(ctx context.Context, notification models.Notification) (string, error) {
 
 	if err := validateCreate(notification); err != nil {
@@ -26,7 +28,7 @@ func (s *Service) CreateNotification(ctx context.Context, notification models.No
 
 		s.logger.LogError("service — failed to produce notification", err, "layer", "service.impl")
 
-		if time.Until(notification.SendAt) < 1*time.Hour {
+		if time.Until(notification.SendAt) < brokerRecoveryWindow {
 
 			err = s.storage.DeleteNotification(ctx, notification.ID)
 			if err != nil {
@@ -43,8 +45,7 @@ func (s *Service) CreateNotification(ctx context.Context, notification models.No
 }
 
 func initialize(notification *models.Notification) {
-	now := time.Now().UTC()
-	notification.UpdatedAt = now
+	notification.UpdatedAt = time.Now().UTC()
 	notification.ID = helpers.CreateUUID()
 	notification.Status = models.StatusPending
 }

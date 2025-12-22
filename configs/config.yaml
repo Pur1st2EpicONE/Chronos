@@ -31,17 +31,17 @@ database:
     backoff: 2
 
   retention_strategy:
-    canceled: 10s
-    completed: 10s  
-    failed: 10s    
+    canceled: 1m
+    completed: 1m  
+    failed: 1m    
 
 broker:
   url: amqp://guest:guest@localhost:5672/
   queue_name: main
   connection_name: chronos-broker
   connect_timeout: 10s
-  cleanup_interval: 5s
-  healthcheck_interval: 5s
+  cleanup_interval: 5m
+  healthcheck_interval: 15s
   
   reconnect:
     attempts: 3

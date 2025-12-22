@@ -10,10 +10,10 @@ import (
 func (s *Service) CancelNotification(ctx context.Context, notificationID string) error {
 
 	if cachedStatus, err := s.cache.GetStatus(ctx, notificationID); err == nil {
-		if cachedStatus == models.StatusCanceled {
+		switch cachedStatus {
+		case models.StatusCanceled:
 			return errs.ErrAlreadyCanceled
-		}
-		if cachedStatus == models.StatusSent || cachedStatus == models.StatusFailedToSendInTime {
+		case models.StatusSent, models.StatusFailedToSendInTime:
 			return errs.ErrCannotCancel
 		}
 	}
@@ -28,17 +28,19 @@ func (s *Service) CancelNotification(ctx context.Context, notificationID string)
 		case errors.Is(err, errs.ErrCannotCancel):
 			currentStatus, err := s.storage.GetStatus(ctx, notificationID)
 			if err != nil {
+				s.logger.LogError("service — failed to get notification status from DB", err, "layer", "service.impl")
 				return err
 			}
+			if err := s.cache.SetStatus(ctx, notificationID, currentStatus); err != nil {
+				s.logger.LogError("service — failed to set notification status in cache", err, "layer", "service.impl")
+			}
 			if currentStatus == models.StatusCanceled {
-				if err := s.cache.SetStatus(ctx, notificationID, models.StatusCanceled); err != nil {
-					s.logger.LogError("service — failed to set or update notification status in cache", err, "layer", "service.impl")
-				}
 				return errs.ErrAlreadyCanceled
 			}
 			return errs.ErrCannotCancel
 
 		default:
+			s.logger.LogError("service — failed to set notification status in DB", err, "layer", "service.impl")
 			return err
 
 		}
@@ -46,7 +48,7 @@ func (s *Service) CancelNotification(ctx context.Context, notificationID string)
 	}
 
 	if err := s.cache.SetStatus(ctx, notificationID, models.StatusCanceled); err != nil {
-		s.logger.LogError("service — failed to set or update notification status in cache", err, "layer", "service.impl")
+		s.logger.LogError("service — failed to set notification status in cache", err, "layer", "service.impl")
 	}
 
 	return nil

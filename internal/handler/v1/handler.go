@@ -34,6 +34,7 @@ func (h *Handler) CreateNotification(c *ginext.Context) {
 
 	notification := models.Notification{
 		Channel: request.Channel,
+		Subject: request.Subject,
 		Message: request.Message,
 		SendAt:  sendAt,
 		SendTo:  request.SendTo,

@@ -49,6 +49,8 @@ func mapErrorToStatus(err error) (int, string) {
 		errors.Is(err, errs.ErrSendAtInPast),
 		errors.Is(err, errs.ErrSendAtTooFar),
 		errors.Is(err, errs.ErrMissingSendTo),
+		errors.Is(err, errs.ErrMissingEmailSubject),
+		errors.Is(err, errs.ErrEmailSubjectTooLong),
 		errors.Is(err, errs.ErrInvalidEmailFormat),
 		errors.Is(err, errs.ErrCannotCancel),
 		errors.Is(err, errs.ErrAlreadyCanceled),

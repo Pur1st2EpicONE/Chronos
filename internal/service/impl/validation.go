@@ -6,6 +6,7 @@ import (
 	"net/mail"
 	"strings"
 	"time"
+	"unicode/utf8"
 )
 
 func validateCreate(notification models.Notification) error {
@@ -22,8 +23,10 @@ func validateCreate(notification models.Notification) error {
 		return err
 	}
 
-	if err := validateSendTo(notification.Channel, notification.SendTo); err != nil {
-		return err
+	if notification.Channel == models.Email {
+		if err := validateEmails(notification.SendTo, notification.Subject); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -38,7 +41,7 @@ func validateChannel(channel string) error {
 
 	ch := strings.ToLower(channel)
 
-	if ch != "telegram" && ch != "email" {
+	if ch != models.Telegram && ch != models.Email && ch != models.Stdout {
 		return errs.ErrUnsupportedChannel
 	}
 
@@ -46,9 +49,9 @@ func validateChannel(channel string) error {
 
 }
 
-func validateMessage(msg string) error {
+func validateMessage(message string) error {
 
-	if len(msg) > 500 {
+	if utf8.RuneCountInString(message) > models.MaxMessageLength {
 		return errs.ErrMessageTooLong
 	}
 
@@ -75,26 +78,40 @@ func validateSendAt(t time.Time) error {
 	return nil
 
 }
+func validateEmails(recipients []string, subject string) error {
 
-func validateSendTo(channel string, recipient string) error {
-
-	if recipient == "" {
+	if len(recipients) == 0 {
 		return errs.ErrMissingSendTo
 	}
 
-	if len(recipient) > 254 {
-		return errs.ErrRecipientTooLong
+	if subject == "" {
+		return errs.ErrMissingEmailSubject
 	}
 
-	if channel == "email" {
-		addr, err := mail.ParseAddress(recipient)
-		if err != nil || !strings.Contains(strings.Split(addr.Address, "@")[1], ".") {
+	if utf8.RuneCountInString(subject) > models.MaxSubjectLength {
+		return errs.ErrEmailSubjectTooLong
+	}
+
+	for _, recipient := range recipients {
+
+		if recipient == "" {
 			return errs.ErrInvalidEmailFormat
 		}
-	}
 
-	if channel == "telegram" {
-		//
+		if len(recipient) > models.MaxEmailLength {
+			return errs.ErrRecipientTooLong
+		}
+
+		addr, err := mail.ParseAddress(recipient)
+		if err != nil {
+			return errs.ErrInvalidEmailFormat
+		}
+
+		parts := strings.Split(addr.Address, "@")
+		if len(parts) != 2 || !strings.Contains(parts[1], ".") {
+			return errs.ErrInvalidEmailFormat
+		}
+
 	}
 
 	return nil
