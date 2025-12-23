@@ -414,3 +414,37 @@ func TestValidateCreate(t *testing.T) {
 	})
 
 }
+
+func TestService_GetAllStatuses(t *testing.T) {
+
+	ctx := context.Background()
+
+	controller := gomock.NewController(t)
+	defer controller.Finish()
+
+	mockLogger := mockLogger.NewMockLogger(controller)
+	mockStorage := mockStorage.NewMockStorage(controller)
+
+	svc := &Service{logger: mockLogger, storage: mockStorage}
+
+	t.Run("storage returns notifications", func(t *testing.T) {
+		expected := []models.Notification{
+			{ID: "1", Status: models.StatusPending},
+			{ID: "2", Status: models.StatusSent},
+		}
+
+		mockStorage.EXPECT().GetAllStatuses(ctx).Return(expected, nil)
+
+		result := svc.GetAllStatuses(ctx)
+		require.Equal(t, expected, result)
+	})
+
+	t.Run("storage returns error", func(t *testing.T) {
+		mockStorage.EXPECT().GetAllStatuses(ctx).Return(nil, errors.New("DB down"))
+		mockLogger.EXPECT().LogError("service — failed to get notification statuses from DB", gomock.Any(), "layer", "service.impl")
+
+		result := svc.GetAllStatuses(ctx)
+		require.Empty(t, result)
+	})
+
+}

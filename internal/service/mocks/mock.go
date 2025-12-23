@@ -70,6 +70,20 @@ func (mr *MockServiceMockRecorder) CreateNotification(ctx, notification any) *go
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateNotification", reflect.TypeOf((*MockService)(nil).CreateNotification), ctx, notification)
 }
 
+// GetAllStatuses mocks base method.
+func (m *MockService) GetAllStatuses(ctx context.Context) []models.Notification {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAllStatuses", ctx)
+	ret0, _ := ret[0].([]models.Notification)
+	return ret0
+}
+
+// GetAllStatuses indicates an expected call of GetAllStatuses.
+func (mr *MockServiceMockRecorder) GetAllStatuses(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllStatuses", reflect.TypeOf((*MockService)(nil).GetAllStatuses), ctx)
+}
+
 // GetStatus mocks base method.
 func (m *MockService) GetStatus(ctx context.Context, notificationID string) (string, error) {
 	m.ctrl.T.Helper()

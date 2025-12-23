@@ -93,6 +93,21 @@ func (mr *MockStorageMockRecorder) DeleteNotification(ctx, notificationID any) *
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteNotification", reflect.TypeOf((*MockStorage)(nil).DeleteNotification), ctx, notificationID)
 }
 
+// GetAllStatuses mocks base method.
+func (m *MockStorage) GetAllStatuses(ctx context.Context) ([]models.Notification, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAllStatuses", ctx)
+	ret0, _ := ret[0].([]models.Notification)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAllStatuses indicates an expected call of GetAllStatuses.
+func (mr *MockStorageMockRecorder) GetAllStatuses(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllStatuses", reflect.TypeOf((*MockStorage)(nil).GetAllStatuses), ctx)
+}
+
 // GetStatus mocks base method.
 func (m *MockStorage) GetStatus(ctx context.Context, notificationID string) (string, error) {
 	m.ctrl.T.Helper()

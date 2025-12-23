@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Chronos Notifications UI</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <h1>Create Notification</h1>
+  <form id="createForm">
+    <label>Channel:</label>
+    <select id="channel">
+      <option value="email">Email</option>
+      <option value="telegram">Telegram</option>
+      <option value="stdout">Stdout</option>
+    </select>
+
+    <div id="emailFields">
+      <label>Subject:</label>
+      <input type="text" id="subject">
+      <label>Send To (comma separated):</label>
+      <input type="text" id="sendTo">
+    </div>
+
+    <label>Message:</label>
+    <textarea id="message"></textarea>
+    <label>Send At:</label>
+    <input type="text" id="sendAt">
+
+    <button type="submit">Create Notification</button>
+  </form>
+
+  <h2>Notifications</h2>
+  <table border="1">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Status</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody id="notifications">
+      {{range .Notifications}}
+      <tr id="notif-{{.ID}}">
+        <td>{{.ID}}</td>
+        <td>{{.Status}}</td>
+        <td>
+          <button onclick="cancelNotification('{{.ID}}', this)">Cancel</button>
+        </td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

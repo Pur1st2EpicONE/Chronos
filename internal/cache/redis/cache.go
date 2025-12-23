@@ -40,10 +40,7 @@ func (c *Cache) GetStatus(ctx context.Context, key string) (string, error) {
 	if err := c.client.Expire(ctx, key, c.config.ExpirationTime); err != nil {
 		return "", err
 	}
-	return c.client.GetWithRetry(ctx, retry.Strategy{
-		Attempts: c.config.RetryStrategy.Attempts,
-		Delay:    c.config.RetryStrategy.Delay,
-		Backoff:  c.config.RetryStrategy.Backoff}, key)
+	return c.client.Get(ctx, key)
 }
 
 func (c *Cache) MarkLates(ctx context.Context, lates []string) error {

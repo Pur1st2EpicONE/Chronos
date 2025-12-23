@@ -30,7 +30,7 @@ migrate-up:
 migrate-down:
 	@migrate -path ./migrations -database "postgres://${DB_USER}:${DB_PASSWORD}@localhost:5433/chronos-db?sslmode=disable" down
 
-tests:
+test:
 	@go test -cover ./internal/handler/v1/...
 	@go test -cover ./internal/service/impl/...
 	@$(MAKE) integration --no-print-directory

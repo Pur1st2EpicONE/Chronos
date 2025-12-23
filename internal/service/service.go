@@ -12,6 +12,7 @@ import (
 
 type Service interface {
 	CreateNotification(ctx context.Context, notification models.Notification) (string, error)
+	GetAllStatuses(ctx context.Context) []models.Notification
 	GetStatus(ctx context.Context, notificationID string) (string, error)
 	CancelNotification(ctx context.Context, notificationID string) error
 }

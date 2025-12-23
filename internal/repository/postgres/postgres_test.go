@@ -218,6 +218,7 @@ func TestGetStatus(t *testing.T) {
 	}
 
 }
+
 func TestMarkLates(t *testing.T) {
 
 	ctx := context.Background()
@@ -376,13 +377,69 @@ func TestSetStatus(t *testing.T) {
 
 }
 
+func TestGetAllStatuses(t *testing.T) {
+
+	ctx := context.Background()
+
+	notifications := []models.Notification{
+		{
+			ID:        fmt.Sprintf("status-1-%d", time.Now().UnixNano()),
+			Channel:   models.Email,
+			Message:   "First notification",
+			Status:    models.StatusPending,
+			SendAt:    time.Now().Add(1 * time.Hour),
+			UpdatedAt: time.Now(),
+			SendTo:    []string{"first@qweqwe.com"},
+		},
+		{
+			ID:        fmt.Sprintf("status-2-%d", time.Now().UnixNano()+1),
+			Channel:   models.Email,
+			Message:   "Second notification",
+			Status:    models.StatusPending,
+			SendAt:    time.Now().Add(2 * time.Hour),
+			UpdatedAt: time.Now(),
+			SendTo:    []string{"second@qweqwe.com"},
+		},
+	}
+
+	for _, n := range notifications {
+		if err := testStorage.CreateNotification(ctx, n); err != nil {
+			t.Fatalf("CreateNotification failed: %v", err)
+		}
+	}
+
+	allStatuses, err := testStorage.GetAllStatuses(ctx)
+	if err != nil {
+		t.Fatalf("GetAllStatuses failed: %v", err)
+	}
+
+	if len(allStatuses) < len(notifications) {
+		t.Fatalf("expected at least %d notifications, got %d", len(notifications), len(allStatuses))
+	}
+
+	found := map[string]bool{}
+	for _, n := range allStatuses {
+		found[n.ID] = true
+	}
+
+	for _, n := range notifications {
+		if !found[n.ID] {
+			t.Fatalf("notification %s not found in GetAllStatuses result", n.ID)
+		}
+	}
+
+	for i := 1; i < len(allStatuses); i++ {
+		if allStatuses[i].SendAt.Before(allStatuses[i-1].SendAt) {
+			t.Fatalf("notifications not sorted by SendAt")
+		}
+	}
+
+}
+
 func TestClose(t *testing.T) {
-
 	log, _ := logger.NewLogger(config.Logger{Debug: true})
-
 	db, _ := dbpg.New(fmt.Sprintf("host=localhost port=5434 user=%s password=%s dbname=chronos_test sslmode=disable",
 		os.Getenv("DB_USER"), os.Getenv("DB_PASSWORD")), nil, &dbpg.Options{})
 	st := postgres.NewStorage(log, config.Storage{}, db)
 	st.Close()
-
 }
