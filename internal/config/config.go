@@ -90,11 +90,13 @@ type Retention struct {
 }
 
 type Cache struct {
-	Host      string `mapstructure:"host"`
-	Port      string `mapstructure:"port"`
-	Password  string `mapstructure:"password"`
-	MaxMemory string `mapstructure:"max_memory"`
-	Policy    string `mapstructure:"policy"`
+	Host           string        `mapstructure:"host"`
+	Port           string        `mapstructure:"port"`
+	Password       string        `mapstructure:"password"`
+	MaxMemory      string        `mapstructure:"max_memory"`
+	Policy         string        `mapstructure:"policy"`
+	RetryStrategy  Producer      `mapstructure:"retry_strategy"`
+	ExpirationTime time.Duration `mapstructure:"expiration_time"`
 }
 
 func Load() (Config, error) {

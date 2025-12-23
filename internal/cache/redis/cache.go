@@ -5,7 +5,6 @@ import (
 	"Chronos/internal/logger"
 	"Chronos/internal/models"
 	"context"
-	"time"
 
 	r "github.com/wb-go/wbf/redis"
 	"github.com/wb-go/wbf/retry"
@@ -14,6 +13,7 @@ import (
 type Cache struct {
 	client *r.Client
 	logger logger.Logger
+	config config.Cache
 }
 
 func Connect(logger logger.Logger, config config.Cache) (*Cache, error) {
@@ -25,24 +25,35 @@ func Connect(logger logger.Logger, config config.Cache) (*Cache, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Cache{client: client, logger: logger}, nil
+	return &Cache{client: client, logger: logger, config: config}, nil
 }
 
 func (c *Cache) SetStatus(ctx context.Context, key string, value any) error {
-	return c.client.SetWithExpirationAndRetry(ctx, retry.Strategy{Attempts: 3, Delay: 2, Backoff: 2}, key, value, 5*time.Second)
+	return c.client.SetWithExpirationAndRetry(ctx, retry.Strategy{
+		Attempts: c.config.RetryStrategy.Attempts,
+		Delay:    c.config.RetryStrategy.Delay,
+		Backoff:  c.config.RetryStrategy.Backoff},
+		key, value, c.config.ExpirationTime)
 }
 
 func (c *Cache) GetStatus(ctx context.Context, key string) (string, error) {
-	if err := c.client.Expire(ctx, key, 5*time.Second); err != nil {
+	if err := c.client.Expire(ctx, key, c.config.ExpirationTime); err != nil {
 		return "", err
 	}
-	return c.client.GetWithRetry(ctx, retry.Strategy{Attempts: 3, Delay: 2, Backoff: 2}, key)
+	return c.client.GetWithRetry(ctx, retry.Strategy{
+		Attempts: c.config.RetryStrategy.Attempts,
+		Delay:    c.config.RetryStrategy.Delay,
+		Backoff:  c.config.RetryStrategy.Backoff}, key)
 }
 
 func (c *Cache) MarkLates(ctx context.Context, lates []string) error {
 	if len(lates) > 0 {
 		for _, key := range lates {
-			if err := c.client.SetWithExpirationAndRetry(ctx, retry.Strategy{Attempts: 3, Delay: 2, Backoff: 2}, key, models.StatusLate, 5*time.Second); err != nil {
+			if err := c.client.SetWithExpirationAndRetry(ctx, retry.Strategy{
+				Attempts: c.config.RetryStrategy.Attempts,
+				Delay:    c.config.RetryStrategy.Delay,
+				Backoff:  c.config.RetryStrategy.Backoff},
+				key, models.StatusLate, c.config.ExpirationTime); err != nil {
 				return err
 			}
 		}
