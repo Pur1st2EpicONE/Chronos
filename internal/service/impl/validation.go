@@ -9,13 +9,13 @@ import (
 	"unicode/utf8"
 )
 
-func validateCreate(notification models.Notification) error {
+func validateCreate(notification *models.Notification) error {
 
 	if err := validateChannel(notification.Channel); err != nil {
 		return err
 	}
 
-	if err := validateMessage(notification.Message); err != nil {
+	if err := validateMessage(&notification.Message); err != nil {
 		return err
 	}
 
@@ -49,10 +49,14 @@ func validateChannel(channel string) error {
 
 }
 
-func validateMessage(message string) error {
+func validateMessage(message *string) error {
 
-	if utf8.RuneCountInString(message) > models.MaxMessageLength {
+	if utf8.RuneCountInString(*message) > models.MaxMessageLength {
 		return errs.ErrMessageTooLong
+	}
+
+	if len(*message) == 0 {
+		*message = "ㅤ"
 	}
 
 	return nil

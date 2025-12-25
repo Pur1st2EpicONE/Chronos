@@ -311,106 +311,113 @@ func TestValidateCreate(t *testing.T) {
 	}
 
 	t.Run("valid notification", func(t *testing.T) {
-		err := validateCreate(validNotification)
+		err := validateCreate(&validNotification)
 		require.NoError(t, err)
 	})
 
 	t.Run("missing channel", func(t *testing.T) {
 		n := validNotification
 		n.Channel = ""
-		err := validateCreate(n)
+		err := validateCreate(&n)
 		require.ErrorIs(t, err, errs.ErrMissingChannel)
 	})
 
 	t.Run("unsupported channel", func(t *testing.T) {
 		n := validNotification
 		n.Channel = "fax"
-		err := validateCreate(n)
+		err := validateCreate(&n)
 		require.ErrorIs(t, err, errs.ErrUnsupportedChannel)
 	})
 
 	t.Run("message too long", func(t *testing.T) {
 		n := validNotification
 		n.Message = strings.Repeat("a", models.MaxMessageLength+1)
-		err := validateCreate(n)
+		err := validateCreate(&n)
 		require.ErrorIs(t, err, errs.ErrMessageTooLong)
 	})
 
 	t.Run("missing sendAt", func(t *testing.T) {
 		n := validNotification
 		n.SendAt = time.Time{}
-		err := validateCreate(n)
+		err := validateCreate(&n)
 		require.ErrorIs(t, err, errs.ErrMissingSendAt)
 	})
 
 	t.Run("sendAt in past", func(t *testing.T) {
 		n := validNotification
 		n.SendAt = now.Add(-time.Hour)
-		err := validateCreate(n)
+		err := validateCreate(&n)
 		require.ErrorIs(t, err, errs.ErrSendAtInPast)
 	})
 
 	t.Run("sendAt too far in future", func(t *testing.T) {
 		n := validNotification
 		n.SendAt = now.AddDate(2, 0, 0)
-		err := validateCreate(n)
+		err := validateCreate(&n)
 		require.ErrorIs(t, err, errs.ErrSendAtTooFar)
 	})
 
 	t.Run("missing recipient", func(t *testing.T) {
 		n := validNotification
 		n.SendTo = []string{}
-		err := validateCreate(n)
+		err := validateCreate(&n)
 		require.ErrorIs(t, err, errs.ErrMissingSendTo)
 	})
 
 	t.Run("missing email subject", func(t *testing.T) {
 		n := validNotification
 		n.Subject = ""
-		err := validateCreate(n)
+		err := validateCreate(&n)
 		require.ErrorIs(t, err, errs.ErrMissingEmailSubject)
 	})
 
 	t.Run("email subject too long", func(t *testing.T) {
 		n := validNotification
 		n.Subject = strings.Repeat("a", models.MaxSubjectLength+1)
-		err := validateCreate(n)
+		err := validateCreate(&n)
 		require.ErrorIs(t, err, errs.ErrEmailSubjectTooLong)
 	})
 
 	t.Run("invalid recipient format", func(t *testing.T) {
 		n := validNotification
 		n.SendTo = []string{"invalid-email"}
-		err := validateCreate(n)
+		err := validateCreate(&n)
 		require.ErrorIs(t, err, errs.ErrInvalidEmailFormat)
 	})
 
 	t.Run("recipient too long", func(t *testing.T) {
 		n := validNotification
 		n.SendTo = []string{strings.Repeat("a", models.MaxEmailLength+1) + "@test.com"}
-		err := validateCreate(n)
+		err := validateCreate(&n)
 		require.ErrorIs(t, err, errs.ErrRecipientTooLong)
 	})
 
 	t.Run("empty recipient string", func(t *testing.T) {
 		n := validNotification
 		n.SendTo = []string{""}
-		err := validateCreate(n)
+		err := validateCreate(&n)
 		require.ErrorIs(t, err, errs.ErrInvalidEmailFormat)
 	})
 
 	t.Run("recipient missing domain dot", func(t *testing.T) {
 		n := validNotification
 		n.SendTo = []string{"user@invalid"}
-		err := validateCreate(n)
+		err := validateCreate(&n)
 		require.ErrorIs(t, err, errs.ErrInvalidEmailFormat)
 	})
 
 	t.Run("recipient missing @ symbol", func(t *testing.T) {
 		n := validNotification
 		n.SendTo = []string{"invalid.com"}
-		err := validateCreate(n)
+		err := validateCreate(&n)
 		require.ErrorIs(t, err, errs.ErrInvalidEmailFormat)
+	})
+
+	t.Run("empty message replaced with invisible char", func(t *testing.T) {
+		msg := ""
+		err := validateMessage(&msg)
+		require.NoError(t, err)
+		require.Equal(t, "ㅤ", msg)
 	})
 
 }

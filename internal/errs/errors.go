@@ -9,7 +9,7 @@ var (
 	ErrUnsupportedChannel    = errors.New("unsupported channel")                                                                      // unsupported channel
 	ErrMessageTooLong        = errors.New("message exceeds maximum length")                                                           // message exceeds maximum length
 	ErrMissingSendAt         = errors.New("send_at is required")                                                                      // send_at is required
-	ErrInvalidSendAt         = errors.New("invalid send_at format, expected RFC3339 or 'YYYY-MM-DD HH:MM:SS'")                        // invalid send_at format, expected RFC3339 or 'YYYY-MM-DD HH:MM:SS'
+	ErrInvalidSendAt         = errors.New("invalid send_at format, expected RFC3339")                                                 // invalid send_at format, expected RFC3339
 	ErrSendAtInPast          = errors.New("send_at cannot be in the past")                                                            // send_at cannot be in the past
 	ErrSendAtTooFar          = errors.New("send_at is too far in the future")                                                         // send_at is too far in the future
 	ErrMissingSendTo         = errors.New("send_to is required")                                                                      // send_to is required

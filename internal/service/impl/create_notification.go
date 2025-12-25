@@ -13,7 +13,7 @@ const brokerRecoveryWindow = time.Hour
 
 func (s *Service) CreateNotification(ctx context.Context, notification models.Notification) (string, error) {
 
-	if err := validateCreate(notification); err != nil {
+	if err := validateCreate(&notification); err != nil {
 		return "", err
 	}
 

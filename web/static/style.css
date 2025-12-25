@@ -1,0 +1,122 @@
+body {
+  display: flex; 
+  justify-content: center;
+  align-items: center;    
+  min-height: 100vh;    
+  margin: 0;
+  padding: 0;
+  font-family: Arial, sans-serif;
+  background-color: #27578F; 
+  color: #1f2d3d;
+  font-size: 14px;
+}
+
+.center-wrapper {
+  max-width: 600px;        
+  width: 90%;            
+  padding: 20px;          
+  background-color: #ffffff;
+  border-radius: 10px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+h1, h2 {
+  text-align: center;
+  color: #1f2d3d;
+  font-size: 1.5em;
+  margin: 10px 0;
+}
+
+form .field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;         
+  margin-bottom: 15px;
+}
+
+form label {
+  font-weight: bold;
+  color: #1f2d3d;
+  font-size: 0.95em;
+}
+
+form input[type="text"],
+form textarea,
+form select {
+  padding: 8px;
+  font-size: 14px;
+  border-radius: 5px;
+  border: 1px solid #cfd8e3;
+  width: 100%;
+  box-sizing: border-box;
+  background-color: #f8fbff;
+}
+
+form textarea {
+  min-height: 50px;
+  resize: vertical;
+}
+
+form input:focus,
+form textarea:focus,
+form select:focus {
+  outline: none;
+  border-color: #005b96;
+  box-shadow: 0 0 0 2px rgba(0, 91, 150, 0.2);
+}
+
+button {
+  padding: 8px 16px;
+  font-size: 13px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  background-color: #005b96;
+  color: white;
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+button:hover:not(:disabled) {
+  background-color: #0074c7; 
+  transform: translateY(-1px);
+}
+
+button:disabled {
+  background-color: #9bbbd4;
+  cursor: not-allowed;
+}
+
+#emailFields {
+  display: none;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+  font-size: 13px;
+}
+
+table th,
+table td {
+  padding: 8px;
+  border: 1px solid #d6e0ea;
+  text-align: left;
+}
+
+table th {
+  background-color: #f3f7fb;
+}
+
+table tr:nth-child(even) {
+  background-color: #fafcff;
+}
+
+table tr:hover {
+  background-color: #eaf3fb;
+}
+
+textarea,
+input[type="text"] {
+  font-family: inherit;
+}
