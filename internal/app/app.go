@@ -123,32 +123,38 @@ func newContext(logger logger.Logger) (context.Context, context.CancelFunc) {
 
 func (a *App) Run() {
 
-	go func() {
-		if err := a.server.Run(); err != nil {
-			a.logger.LogFatal("server run failed", err, "layer", "app")
-		}
-	}()
-
 	var wg sync.WaitGroup
 
 	wg.Go(func() {
-		if err := a.broker.Consume(a.ctx); err != nil {
+		if err := a.server.Run(); err != nil {
+			a.logger.LogFatal("server run failed", err, "layer", "app")
+		}
+	})
+
+	wg.Go(func() {
+		if err := a.broker.Consume(); err != nil {
 			a.logger.LogFatal("consumer run failed", err, "layer", "app")
 		}
 	})
 
 	<-a.ctx.Done()
-	wg.Wait()
 
-	a.Stop()
+	a.Stop(&wg)
 
 }
 
-func (a *App) Stop() {
+func (a *App) Stop(wg *sync.WaitGroup) {
+
 	a.server.Shutdown()
+	a.broker.Shutdown()
+
+	wg.Wait()
+
 	a.cache.Close()
 	a.storage.Close()
+
 	if a.logFile != nil {
 		_ = a.logFile.Close()
 	}
+
 }

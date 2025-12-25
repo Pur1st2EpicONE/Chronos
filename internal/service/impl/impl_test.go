@@ -164,7 +164,7 @@ func TestService_CreateNotification(t *testing.T) {
 
 	t.Run("broker produce fails and within recovery window, storage.DeleteNotification succeeds", func(t *testing.T) {
 		mockStorage.EXPECT().CreateNotification(ctx, gomock.Any()).Return(nil)
-		mockBroker.EXPECT().Produce(ctx, gomock.Any()).Return(errors.New("broker down"))
+		mockBroker.EXPECT().Produce(gomock.Any()).Return(errors.New("broker down"))
 		mockLogger.EXPECT().LogError("service — failed to produce notification", gomock.Any(), "layer", "service.impl")
 		mockStorage.EXPECT().DeleteNotification(ctx, gomock.Any()).Return(nil)
 
@@ -175,7 +175,7 @@ func TestService_CreateNotification(t *testing.T) {
 
 	t.Run("broker produce fails and DeleteNotification fails", func(t *testing.T) {
 		mockStorage.EXPECT().CreateNotification(ctx, gomock.Any()).Return(nil)
-		mockBroker.EXPECT().Produce(ctx, gomock.Any()).Return(errors.New("broker down"))
+		mockBroker.EXPECT().Produce(gomock.Any()).Return(errors.New("broker down"))
 		mockLogger.EXPECT().LogError("service — failed to produce notification", gomock.Any(), "layer", "service.impl")
 		mockStorage.EXPECT().DeleteNotification(ctx, gomock.Any()).Return(errors.New("db delete fail"))
 		mockLogger.EXPECT().LogError("service — failed to delete notification from db", gomock.Any(), "layer", "service.impl")
@@ -190,7 +190,7 @@ func TestService_CreateNotification(t *testing.T) {
 		longFuture.SendAt = time.Now().Add(2 * time.Hour)
 
 		mockStorage.EXPECT().CreateNotification(ctx, gomock.Any()).Return(nil)
-		mockBroker.EXPECT().Produce(ctx, gomock.Any()).Return(errors.New("broker down"))
+		mockBroker.EXPECT().Produce(gomock.Any()).Return(errors.New("broker down"))
 		mockLogger.EXPECT().LogError("service — failed to produce notification", gomock.Any(), "layer", "service.impl")
 
 		id, err := svc.CreateNotification(ctx, longFuture)
@@ -200,7 +200,7 @@ func TestService_CreateNotification(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		mockStorage.EXPECT().CreateNotification(ctx, gomock.Any()).Return(nil)
-		mockBroker.EXPECT().Produce(ctx, gomock.Any()).Return(nil)
+		mockBroker.EXPECT().Produce(gomock.Any()).Return(nil)
 
 		id, err := svc.CreateNotification(ctx, notification)
 		require.NotEmpty(t, id)

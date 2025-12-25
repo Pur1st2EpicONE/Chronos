@@ -3,14 +3,15 @@ package models
 import "time"
 
 type Notification struct {
-	ID        string    `json:"id"`
-	Channel   string    `json:"channel"`
-	Subject   string    `json:"subject"`
-	Message   string    `json:"message"`
-	Status    string    `json:"status"`
-	SendAt    time.Time `json:"send_at"`
-	SendTo    []string  `json:"send_to"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID          string    `json:"id"`
+	Channel     string    `json:"channel"`
+	Subject     string    `json:"subject"`
+	Message     string    `json:"message"`
+	Status      string    `json:"status"`
+	SendAt      time.Time `json:"send_at"`
+	SendAtLocal string    `json:"send_at_local"`
+	SendTo      []string  `json:"send_to"`
+	UpdatedAt   time.Time `json:"updated_at"`
 }
 
 const (

@@ -14,7 +14,7 @@ func (s *Storage) GetAllStatuses(ctx context.Context) ([]models.Notification, er
 
 	query := `
 	
-	SELECT uuid, status 
+	SELECT uuid, send_at, send_at_local, status 
 	FROM Notifications
 	ORDER BY send_at ASC;`
 
@@ -30,7 +30,7 @@ func (s *Storage) GetAllStatuses(ctx context.Context) ([]models.Notification, er
 
 	for rows.Next() {
 		var n models.Notification
-		if err := rows.Scan(&n.ID, &n.Status); err != nil {
+		if err := rows.Scan(&n.ID, &n.SendAt, &n.SendAtLocal, &n.Status); err != nil {
 			return nil, fmt.Errorf("failed to scan row: %w", err)
 		}
 		notifications = append(notifications, n)

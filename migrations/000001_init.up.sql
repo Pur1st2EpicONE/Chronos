@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS Notifications (
     message     TEXT NOT NULL,
     status      VARCHAR(30) NOT NULL DEFAULT 'pending',
     send_at     TIMESTAMP WITH TIME ZONE NOT NULL,
+    send_at_local VARCHAR(20) NOT NULL,
     updated_at  TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
 );
 

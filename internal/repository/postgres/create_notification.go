@@ -19,8 +19,8 @@ func (s *Storage) CreateNotification(ctx context.Context, notification models.No
 
 	notificationsQuery := `
 
-			INSERT INTO Notifications (uuid, channel, message, status, send_at, updated_at)
-			VALUES ($1, $2, $3, $4, $5, $6);`
+			INSERT INTO Notifications (uuid, channel, message, status, send_at, send_at_local, updated_at)
+			VALUES ($1, $2, $3, $4, $5, $6, $7);`
 
 	recipientsQuery := `
 
@@ -32,7 +32,7 @@ func (s *Storage) CreateNotification(ctx context.Context, notification models.No
 		_, err := tx.ExecContext(ctx, notificationsQuery,
 			notification.ID, notification.Channel,
 			notification.Message, notification.Status,
-			notification.SendAt, notification.UpdatedAt)
+			notification.SendAt, notification.SendAtLocal, notification.UpdatedAt)
 
 		if err != nil {
 			return fmt.Errorf("failed to execute query: %w", err)

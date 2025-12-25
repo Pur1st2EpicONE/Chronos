@@ -2,7 +2,6 @@ package rabbitmq
 
 import (
 	"Chronos/internal/models"
-	"context"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -11,11 +10,11 @@ import (
 	"github.com/wb-go/wbf/retry"
 )
 
-func (b *Broker) Produce(ctx context.Context, notification models.Notification) error {
+func (b *Broker) Produce(notification models.Notification) error {
 
 	sendAt := max(time.Until(notification.SendAt), 0)
 
-	return retry.DoContext(ctx, retry.Strategy{
+	return retry.DoContext(b.client.Context(), retry.Strategy{
 		Attempts: b.config.Producer.Attempts,
 		Delay:    b.config.Producer.Delay,
 		Backoff:  b.config.Producer.Backoff}, func() error {
@@ -50,7 +49,7 @@ func (b *Broker) Produce(ctx context.Context, notification models.Notification) 
 
 		pub := amqp.Publishing{ContentType: contentType, Body: body}
 
-		if err := ch.PublishWithContext(ctx, mainExchange, notification.ID, false, false, pub); err != nil {
+		if err := ch.PublishWithContext(b.client.Context(), mainExchange, notification.ID, false, false, pub); err != nil {
 			return fmt.Errorf("failed to publish with context: %w", err)
 		}
 

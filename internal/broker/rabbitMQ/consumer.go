@@ -9,18 +9,18 @@ import (
 	"time"
 
 	"github.com/rabbitmq/amqp091-go"
+	wbf "github.com/wb-go/wbf/rabbitmq"
 	"github.com/wb-go/wbf/retry"
 )
 
-func (b *Broker) Consume(ctx context.Context) error {
+func (b *Broker) Consume() error {
 
-	go b.sysmon(ctx)
+	go b.sysmon(b.client.Context())
 
-	if err := b.Consumer.Start(ctx); err != nil && !errors.Is(err, context.Canceled) {
+	if err := b.Consumer.Start(b.client.Context()); err != nil &&
+		!errors.Is(err, wbf.ErrClientClosed) && !errors.Is(err, context.Canceled) {
 		return err
 	}
-
-	b.logger.LogInfo("consumer — stopped", "layer", "broker.rabbitMQ")
 
 	return nil
 

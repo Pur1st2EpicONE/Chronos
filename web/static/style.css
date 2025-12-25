@@ -8,13 +8,13 @@ body {
   font-family: Arial, sans-serif;
   background-color: #27578F; 
   color: #1f2d3d;
-  font-size: 14px;
+  font-size: 15px;
 }
 
 .center-wrapper {
-  max-width: 600px;        
-  width: 90%;            
-  padding: 20px;          
+  max-width: 750px;        
+  width: 95%;              
+  padding: 25px;           
   background-color: #ffffff;
   border-radius: 10px;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
@@ -23,7 +23,7 @@ body {
 h1, h2 {
   text-align: center;
   color: #1f2d3d;
-  font-size: 1.5em;
+  font-size: 1.6em;
   margin: 10px 0;
 }
 
@@ -44,7 +44,7 @@ form input[type="text"],
 form textarea,
 form select {
   padding: 8px;
-  font-size: 14px;
+  font-size: 14px; 
   border-radius: 5px;
   border: 1px solid #cfd8e3;
   width: 100%;
@@ -53,16 +53,8 @@ form select {
 }
 
 form textarea {
-  min-height: 50px;
+  min-height: 60px;
   resize: vertical;
-}
-
-form input:focus,
-form textarea:focus,
-form select:focus {
-  outline: none;
-  border-color: #005b96;
-  box-shadow: 0 0 0 2px rgba(0, 91, 150, 0.2);
 }
 
 button {
@@ -90,18 +82,25 @@ button:disabled {
   display: none;
 }
 
+#notificationsWrapper {
+  overflow-x: auto; 
+}
+
 table {
   width: 100%;
   border-collapse: collapse;
   margin-top: 20px;
   font-size: 13px;
+  table-layout: auto;
 }
 
 table th,
 table td {
   padding: 8px;
   border: 1px solid #d6e0ea;
-  text-align: left;
+  text-align: center;
+  vertical-align: middle;
+  white-space: nowrap;
 }
 
 table th {

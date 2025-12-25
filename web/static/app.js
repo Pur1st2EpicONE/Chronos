@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const tbody = document.getElementById('notifications');
   const sendAtInput = document.getElementById('sendAt');
 
-  const now = new Date();
+  const now = new Date(Date.now() + 30_000);
   const pad = (num) => String(num).padStart(2, '0');
   const offset = -now.getTimezoneOffset();
   const sign = offset >= 0 ? '+' : '-';
@@ -37,7 +37,8 @@ document.addEventListener('DOMContentLoaded', () => {
       list.forEach(n => {
         const id = getId(n);
         const status = getStatus(n);
-        if (id != null) addOrUpdateNotificationRow(id, status);
+        const sendAt = n.sendAt ?? n.SendAtLocal ?? localIso;
+        if (id != null) addOrUpdateNotificationRow(id, status, sendAt);
       });
 
       const title = document.getElementById('notificationsTitle');
@@ -64,7 +65,12 @@ document.addEventListener('DOMContentLoaded', () => {
     return n.status ?? n.Status ?? n.state ?? 'unknown';
   }
 
-  function addOrUpdateNotificationRow(id, status) {
+  function normalizeSendAt(str) {
+  if (!str) return '';
+  return str.replace('T', ' ').replace(/([+-]\d{2}:\d{2}|Z)$/, '');
+  }
+
+  function addOrUpdateNotificationRow(id, status, sendAt) {
     const title = document.getElementById('notificationsTitle');
     const wrapper = document.getElementById('notificationsWrapper');
 
@@ -74,7 +80,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const existingRow = document.getElementById(`notif-${id}`);
     if (existingRow) {
       if (existingRow.cells && existingRow.cells[1]) {
-        existingRow.cells[1].innerText = status;
+        existingRow.cells[1].innerText = sendAt ?? '';
+        existingRow.cells[2].innerText = status;
         const btn = existingRow.querySelector('button');
         if (btn) btn.disabled = status === 'canceled';
       }
@@ -87,11 +94,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const tdId = document.createElement('td');
     tdId.innerText = id;
 
+    const tdSendAt = document.createElement('td');
+    tdSendAt.innerText = sendAt ?? '';
+
     const tdStatus = document.createElement('td');
     tdStatus.innerText = status;
 
     const tdAction = document.createElement('td');
     const btn = document.createElement('button');
+
     btn.type = 'button';
     btn.innerText = 'Cancel';
     btn.disabled = status === 'canceled';
@@ -99,6 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
     tdAction.appendChild(btn);
 
     tr.appendChild(tdId);
+    tr.appendChild(tdSendAt);
     tr.appendChild(tdStatus);
     tr.appendChild(tdAction);
 
@@ -117,10 +129,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (channel === 'email') {
       payload.subject = document.getElementById('subject').value;
-      payload.send_to = document.getElementById('sendTo').value
-        .split(',')
-        .map(s => s.trim())
-        .filter(Boolean);
+      payload.send_to = document.getElementById('sendTo').value.split(',').map(s => s.trim()).filter(Boolean);
       if (!payload.send_to.length) { alert('Email address is required'); return; }
       if (!payload.subject) { alert('Subject is required'); return; }
     }
@@ -135,9 +144,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const createdId = data.result ?? data.id ?? data.ID ?? (data.created && (data.created.id ?? data.created.ID)) ?? null;
       const createdStatus = data.status ?? 'created';
+      const createdSendAt = data.send_at_local ?? data.SendAtLocal ?? normalizeSendAt(sendAtInput.value);
 
       if (createdId) {
-        addOrUpdateNotificationRow(createdId, createdStatus);
+        addOrUpdateNotificationRow(createdId, createdStatus, createdSendAt);
         alert(`Created with ID: ${createdId}`);
         channelSelect.dispatchEvent(new Event('change'));
       } else {
@@ -159,7 +169,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (ok) {
         button.disabled = true;
         const tr = document.getElementById(`notif-${id}`);
-        if (tr && tr.cells && tr.cells[1]) tr.cells[1].innerText = 'canceled';
+        if (tr && tr.cells && tr.cells[2]) tr.cells[2].innerText = 'canceled';
       } else {
         let errorMsg = 'Unknown error';
         if (data.error) errorMsg = data.error;

@@ -11,7 +11,6 @@ package mocks
 
 import (
 	models "Chronos/internal/models"
-	context "context"
 	reflect "reflect"
 
 	gomock "go.uber.org/mock/gomock"
@@ -42,29 +41,41 @@ func (m *MockBroker) EXPECT() *MockBrokerMockRecorder {
 }
 
 // Consume mocks base method.
-func (m *MockBroker) Consume(ctx context.Context) error {
+func (m *MockBroker) Consume() error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Consume", ctx)
+	ret := m.ctrl.Call(m, "Consume")
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Consume indicates an expected call of Consume.
-func (mr *MockBrokerMockRecorder) Consume(ctx any) *gomock.Call {
+func (mr *MockBrokerMockRecorder) Consume() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Consume", reflect.TypeOf((*MockBroker)(nil).Consume), ctx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Consume", reflect.TypeOf((*MockBroker)(nil).Consume))
 }
 
 // Produce mocks base method.
-func (m *MockBroker) Produce(ctx context.Context, notification models.Notification) error {
+func (m *MockBroker) Produce(notification models.Notification) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Produce", ctx, notification)
+	ret := m.ctrl.Call(m, "Produce", notification)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Produce indicates an expected call of Produce.
-func (mr *MockBrokerMockRecorder) Produce(ctx, notification any) *gomock.Call {
+func (mr *MockBrokerMockRecorder) Produce(notification any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Produce", reflect.TypeOf((*MockBroker)(nil).Produce), ctx, notification)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Produce", reflect.TypeOf((*MockBroker)(nil).Produce), notification)
+}
+
+// Shutdown mocks base method.
+func (m *MockBroker) Shutdown() {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "Shutdown")
+}
+
+// Shutdown indicates an expected call of Shutdown.
+func (mr *MockBrokerMockRecorder) Shutdown() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Shutdown", reflect.TypeOf((*MockBroker)(nil).Shutdown))
 }

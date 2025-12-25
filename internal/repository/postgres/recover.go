@@ -15,14 +15,19 @@ func (s *Storage) Recover(ctx context.Context) ([]models.Notification, error) {
 
 	query := `
 	
-	SELECT n.id, n.channel, n.message, n.status, n.send_at, array_agg(r.recipient) AS send_to, n.updated_at
-	FROM Notifications n
-	JOIN Recipients r 
-	ON n.uuid = r.notification_uuid
-	WHERE n.status = $1 OR n.status = $2
-	GROUP BY n.id
-	ORDER BY n.send_at ASC
-	LIMIT $3;`
+		WITH recipients_agg AS (
+			SELECT notification_uuid, array_agg(recipient) AS send_to
+			FROM recipients
+			GROUP BY notification_uuid
+		)
+
+		SELECT n.uuid, n.channel, n.message, n.status, n.send_at, n.send_at_local, r.send_to, n.updated_at
+		FROM notifications n
+		LEFT JOIN recipients_agg r
+	    ON n.uuid = r.notification_uuid
+		WHERE n.status IN ($1, $2)
+		ORDER BY n.send_at ASC
+		LIMIT $3;`
 
 	rows, err := s.db.QueryWithRetry(ctx, retry.Strategy{
 		Attempts: s.config.QueryRetryStrategy.Attempts,
@@ -41,7 +46,7 @@ func (s *Storage) Recover(ctx context.Context) ([]models.Notification, error) {
 		var n models.Notification
 		if err := rows.Scan(
 			&n.ID, &n.Channel, &n.Message,
-			&n.Status, &n.SendAt, dbpg.Array(&n.SendTo),
+			&n.Status, &n.SendAt, &n.SendAtLocal, dbpg.Array(&n.SendTo),
 			&n.UpdatedAt); err != nil {
 			return nil, fmt.Errorf("failed to scan row: %w", err)
 		}

@@ -11,7 +11,7 @@
 
     <form id="createForm">
       <div class="field">
-        <label for="channel">Channel:</label>
+        <label for="channel">Channel</label>
         <select id="channel">
           <option value="telegram">Telegram</option>
           <option value="email">Email</option>
@@ -21,23 +21,23 @@
 
       <div id="emailFields">
         <div class="field">
-          <label for="subject">Subject:</label>
+          <label for="subject">Subject</label>
           <input type="text" id="subject">
         </div>
 
         <div class="field">
-          <label for="sendTo">Send To (comma separated):</label>
+          <label for="sendTo">Recipients (comma separated)</label>
           <input type="text" id="sendTo">
         </div>
       </div>
 
       <div class="field">
-        <label for="message">Message:</label>
+        <label for="message">Message</label>
         <textarea id="message"></textarea>
       </div>
 
       <div class="field">
-        <label for="sendAt">Send At:</label>
+        <label for="sendAt">Send At</label>
         <input type="text" id="sendAt" placeholder="2025-12-25T17:18:08+02:00">
       </div>
 
@@ -50,6 +50,7 @@
         <thead>
           <tr>
             <th>ID</th>
+            <th>Send At (local time)</th>
             <th>Status</th>
             <th>Action</th>
           </tr>
@@ -58,6 +59,7 @@
           {{range .Notifications}}
           <tr id="notif-{{.ID}}">
             <td>{{.ID}}</td>
+            <td>{{.SendAtLocal}}</td>
             <td>{{.Status}}</td>
             <td>
               <button onclick="cancelNotification('{{.ID}}', this)">Cancel</button>

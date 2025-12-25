@@ -10,6 +10,7 @@ import (
 )
 
 const brokerRecoveryWindow = time.Hour
+const localDateTime = "2006-01-02 15:04:05"
 
 func (s *Service) CreateNotification(ctx context.Context, notification models.Notification) (string, error) {
 
@@ -24,7 +25,7 @@ func (s *Service) CreateNotification(ctx context.Context, notification models.No
 		return "", err
 	}
 
-	if err := s.broker.Produce(ctx, notification); err != nil {
+	if err := s.broker.Produce(notification); err != nil {
 
 		s.logger.LogError("service — failed to produce notification", err, "layer", "service.impl")
 
@@ -46,6 +47,7 @@ func (s *Service) CreateNotification(ctx context.Context, notification models.No
 
 func initialize(notification *models.Notification) {
 	notification.UpdatedAt = time.Now().UTC()
+	notification.SendAtLocal = notification.SendAt.Local().Format(localDateTime)
 	notification.ID = helpers.CreateUUID()
 	notification.Status = models.StatusPending
 }

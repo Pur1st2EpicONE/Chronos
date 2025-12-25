@@ -57,13 +57,11 @@ func NewBroker(logger logger.Logger, config config.Broker, cache cache.Cache, st
 
 	err = client.DeclareExchange(mainExchange, exchangeKind, true, false, false, nil)
 	if err != nil {
-		client.Close()
 		return nil, fmt.Errorf("failed to declare exchange: %w", err)
 	}
 
 	err = client.DeclareQueue(config.QueueName, mainExchange, config.QueueName, true, false, true, nil)
 	if err != nil {
-		client.Close()
 		return nil, fmt.Errorf("failed to declare queue: %w", err)
 	}
 
@@ -92,6 +90,14 @@ func NewBroker(logger logger.Logger, config config.Broker, cache cache.Cache, st
 
 	return b, nil
 
+}
+
+func (b *Broker) Shutdown() {
+	if err := b.client.Close(); err != nil {
+		b.logger.LogError("broker — failed to shutdown gracefully", err, "layer", "broker.rabbitMQ")
+	} else {
+		b.logger.LogInfo("broker — shutdown complete", "layer", "broker.rabbitMQ")
+	}
 }
 
 func (b *Broker) sysmon(ctx context.Context) {
@@ -148,8 +154,9 @@ func (b *Broker) recover(ctx context.Context) {
 		return
 	}
 	for _, notification := range notifications {
-		if err := b.Produce(ctx, notification); err != nil {
+		if err := b.Produce(notification); err != nil {
 			b.logger.LogError("broker — failed to produce notification", err, "notificationID", notification.ID, "layer", "broker.rabbitMQ")
 		}
 	}
+	b.logger.Debug("broker — recovered", "layer", "broker.rabbitMQ")
 }

@@ -87,7 +87,7 @@ func (s *Sender) sendTelegram(message string) error {
 	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("Telegram API returned non-OK status %s for chat_id %s", resp.Status, s.telegramReceiver)
+		return fmt.Errorf("telegram API returned non-OK status %s for chat_id %s", resp.Status, s.telegramReceiver)
 	}
 
 	return nil
