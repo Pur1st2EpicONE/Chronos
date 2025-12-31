@@ -2,13 +2,11 @@ module Chronos
 
 go 1.25.1
 
-replace github.com/wb-go/wbf => ../wbf
-
 require (
 	github.com/gin-gonic/gin v1.11.0
 	github.com/rabbitmq/amqp091-go v1.10.0
 	github.com/stretchr/testify v1.11.1
-	github.com/wb-go/wbf v0.0.0-00010101000000-000000000000
+	github.com/wb-go/wbf v0.0.12
 	go.uber.org/mock v0.5.0
 )
 

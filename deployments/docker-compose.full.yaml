@@ -1,0 +1,54 @@
+services:
+  app:
+    build: .
+    container_name: chronos
+    depends_on:
+      - postgres
+      - rabbitmq
+      - redis
+    env_file:
+      - .env
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./config.yaml:/app/config.yaml:ro
+      - ./web:/app/web:ro
+    restart: "no"
+
+  postgres:
+    image: postgres:latest
+    container_name: postgres
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: chronos-db
+    ports:
+      - 5433:5432
+    volumes:
+      - ./migrations:/docker-entrypoint-initdb.d
+    restart: on-failure
+
+  postgres-test:
+    image: postgres:latest
+    container_name: postgres-test
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: chronos_test
+    ports:
+      - 5434:5432
+    restart: on-failure
+
+  rabbitmq:
+    image: rabbitmq:4.1.3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+  redis:
+    image: redis:8
+    container_name: redis
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD}"]
+    ports:
+      - "6379:6379"

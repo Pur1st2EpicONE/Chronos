@@ -1,0 +1,71 @@
+docker: true
+
+logger:
+  log_directory:
+  debug_mode: true
+
+server:
+  port: "8080"
+  read_timeout: 5s
+  write_timeout: 10s
+  max_header_bytes: 1048576
+  shutdown_timeout: 5s
+
+cache:
+  host: redis
+  port: "6379"
+  max_memory: 100mb
+  policy: allkeys-lru
+  expiration_time: 5s
+  retry_strategy:
+    attempts: 3
+    delay: 3s
+    backoff: 2
+
+database:
+  host: postgres
+  port: "5432"
+  dbname: chronos-db
+  sslmode: disable
+  max_open_conns: 57
+  max_idle_conns: 25
+  conn_max_lifetime: 1h
+  recover_limit: 1000
+
+  query_retry_strategy:
+    attempts: 3
+    delay: 3s
+    backoff: 2
+
+  retention_strategy:
+    canceled: 1m
+    completed: 1m  
+    failed: 1m    
+
+broker:
+  url: amqp://guest:guest@rabbitmq:5672/ 
+  queue_name: main
+  connection_name: chronos-broker
+  connect_timeout: 10s
+  cleanup_interval: 5m
+  healthcheck_interval: 15s
+  
+  reconnect:
+    attempts: 3
+    delay: 3s
+    backoff: 2 # delay * backoff
+
+  producer:
+    attempts: 3
+    delay: 150ms
+    backoff: 1.5
+    message_queue_ttl: 30s
+
+  consumer:
+    attempts: 3
+    delay: 150ms
+    backoff: 1.5
+    consumer_tag: chronos-worker
+    auto_ack: true
+    workers: 2
+    prefetch_count: 1

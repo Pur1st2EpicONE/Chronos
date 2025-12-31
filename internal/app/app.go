@@ -153,7 +153,7 @@ func (a *App) Stop(wg *sync.WaitGroup) {
 	a.cache.Close()
 	a.storage.Close()
 
-	if a.logFile != nil {
+	if a.logFile != nil && a.logFile != os.Stdout {
 		_ = a.logFile.Close()
 	}
 

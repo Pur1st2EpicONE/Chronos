@@ -103,11 +103,11 @@ func Load() (Config, error) {
 
 	cfg := wbf.New()
 
-	if err := cfg.LoadEnvFiles(".env"); err != nil {
+	if err := cfg.LoadConfigFiles("./config.yaml"); err != nil {
 		return Config{}, err
 	}
 
-	if err := cfg.LoadConfigFiles("./configs/config.yaml"); err != nil {
+	if err := cfg.LoadEnvFiles(".env"); err != nil && !cfg.GetBool("docker") {
 		return Config{}, err
 	}
 

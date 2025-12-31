@@ -1,31 +1,53 @@
 .PHONY: all up down db-load app migrate-up migrate-down integration helper-compose-up migrate-helper-compose-up lint
 
--include .env
+-include .env.example .env
 
-all: up 
+all: full
 
-up: local-compose db-load migrate-up rabbit-load app
+full:
+	@if [ ! -f .env ] && [ ! -f .env.example ]; then \
+		echo "Missing environment file: .env or .env.example is required."; \
+		exit 1; \
+	fi
+	@if [ ! -f .env ]; then cat .env.example > .env; fi
+	@if [ ! -f config.yaml ]; then cp ./configs/config.full.yaml ./config.yaml; fi
+	@if [ ! -f docker-compose.yaml ]; then cp ./deployments/docker-compose.full.yaml ./docker-compose.yaml; fi
+	@if [ ! -f Dockerfile ]; then cp ./deployments/Dockerfile ./Dockerfile; fi
+	@docker-compose build --no-cache
+	@docker-compose up -d postgres rabbitmq redis
+	@$(MAKE) -s db-load
+	@$(MAKE) -s rabbit-load
+	@docker-compose up -d app 2>&1 | grep -v "is up-to-date"
+
+local: local-compose db-load migrate-up rabbit-load app
 
 local-compose:
-	@docker compose -f docker-compose.yaml up -d postgres rabbitmq redis
+	@cat .env.example > .env
+	@cp ./configs/config.dev.yaml ./config.yaml
+	@cp ./deployments/docker-compose.dev.yaml ./docker-compose.yaml
+	@docker compose up -d postgres rabbitmq redis
 
 down:
-	@docker compose -f docker-compose.yaml down
+	@docker compose down 2>/dev/null || true
+	@rm -f config.yaml
+	@rm -f Dockerfile
+	@rm -f docker-compose.yaml
+	@rm -f .env
 	
 db-load:
 	@until docker exec postgres pg_isready -U ${DB_USER} > /dev/null 2>&1; do sleep 0.5; done
-
-rabbit-load:
-	@until docker exec rabbitmq rabbitmqctl status > /dev/null 2>&1; do sleep 0.5; done
-
-app:
-	go run ./cmd/chronos/main.go -o app
 
 migrate-up:
 	@for i in $$(seq 1 10); do \
 		migrate -path ./migrations -database "postgres://${DB_USER}:${DB_PASSWORD}@localhost:5433/chronos-db?sslmode=disable" up && exit 0; \
 		echo "Retry $$i/10..."; sleep 1; \
 	done; exit 1
+
+rabbit-load:
+	@until docker exec rabbitmq rabbitmqctl status > /dev/null 2>&1; do sleep 0.5; done
+
+app:
+	@bash -c 'trap "exit 0" INT; go run ./cmd/chronos/main.go'
 
 migrate-down:
 	@migrate -path ./migrations -database "postgres://${DB_USER}:${DB_PASSWORD}@localhost:5433/chronos-db?sslmode=disable" down
