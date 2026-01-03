@@ -15,5 +15,6 @@ CREATE TABLE IF NOT EXISTS Recipients (
     recipient         VARCHAR(254) NOT NULL
 );
 
-CREATE INDEX IF NOT EXISTS idx_notifications_uuid ON Notifications(uuid);
-CREATE INDEX IF NOT EXISTS idx_notifications_status ON Notifications(status) WHERE status = 'canceled';
+CREATE INDEX IF NOT EXISTS idx_recipients_notification_uuid ON Recipients(notification_uuid);
+CREATE INDEX IF NOT EXISTS idx_notifications_status_send_at ON Notifications(status, send_at);
+CREATE INDEX IF NOT EXISTS idx_notifications_status_updated_at ON Notifications(status, updated_at);

@@ -32,5 +32,3 @@ func (s *Storage) DB() *dbpg.DB {
 func (s *Storage) Config() *config.Storage {
 	return &s.config
 }
-
-// docker exec -it postgres psql -U Neo -d chronos-db

@@ -1,7 +1,7 @@
 docker: true
 
 logger:
-  log_directory:
+  log_directory: ./logs
   debug_mode: true
 
 server:
