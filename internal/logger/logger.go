@@ -8,14 +8,10 @@ import (
 
 // Logger defines the interface for structured logging with different severity levels.
 type Logger interface {
-	// LogFatal logs a fatal message with an error and optional key-value arguments.
-	LogFatal(msg string, err error, args ...any)
-	// LogError logs an error message with an error and optional key-value arguments.
-	LogError(string, error, ...any)
-	// LogInfo logs an informational message with optional key-value arguments.
-	LogInfo(msg string, args ...any)
-	// Debug logs a debug message with optional key-value arguments.
-	Debug(msg string, args ...any)
+	LogFatal(msg string, err error, args ...any) // LogFatal logs a fatal message with an error and optional key-value arguments.
+	LogError(string, error, ...any)              // LogError logs an error message with an error and optional key-value arguments.
+	LogInfo(msg string, args ...any)             // LogInfo logs an informational message with optional key-value arguments.
+	Debug(msg string, args ...any)               // Debug logs a debug message with optional key-value arguments.
 }
 
 // NewLogger creates a new Logger instance based on the provided configuration.

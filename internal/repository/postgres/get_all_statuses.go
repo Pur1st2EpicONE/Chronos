@@ -8,6 +8,10 @@ import (
 	"github.com/wb-go/wbf/retry"
 )
 
+// GetAllStatuses returns all notifications with their scheduling timestamps
+// and current status, ordered by send time.
+// Note: This method is intended only for the web frontend and is not optimized
+// for API usage or large datasets.
 func (s *Storage) GetAllStatuses(ctx context.Context) ([]models.Notification, error) {
 
 	var notifications []models.Notification

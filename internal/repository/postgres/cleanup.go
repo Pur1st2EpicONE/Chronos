@@ -7,6 +7,8 @@ import (
 	"github.com/wb-go/wbf/retry"
 )
 
+// Cleanup removes outdated notifications from the database
+// based on retention rules for each notification status.
 func (s *Storage) Cleanup(ctx context.Context) {
 
 	query := `

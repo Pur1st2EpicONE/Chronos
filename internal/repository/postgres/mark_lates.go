@@ -8,6 +8,10 @@ import (
 	"github.com/wb-go/wbf/retry"
 )
 
+// MarkLates updates notifications that are past their scheduled send time
+// from "pending" to "running late" and returns their IDs.
+// It is used by sysmon, the consumer goroutine that monitors broker health,
+// so if the broker is not healthy, users can see which notifications are delayed.
 func (s *Storage) MarkLates(ctx context.Context) ([]string, error) {
 
 	query := `

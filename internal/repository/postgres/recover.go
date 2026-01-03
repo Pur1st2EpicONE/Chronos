@@ -9,6 +9,10 @@ import (
 	"github.com/wb-go/wbf/retry"
 )
 
+// Recover retrieves notifications that need to be re-queued or retried.
+// It is called during service initialization and when the broker recovers from a failure.
+// The method fetches all notifications that were scheduled to be sent but could not
+// be delivered while the broker was unavailable.
 func (s *Storage) Recover(ctx context.Context) ([]models.Notification, error) {
 
 	var notifications []models.Notification

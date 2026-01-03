@@ -13,6 +13,8 @@ import (
 	"github.com/wb-go/wbf/retry"
 )
 
+// Consume starts the RabbitMQ consumer and system monitor in the background.
+// It returns an error if the consumer fails to start for reasons other than client closure or context cancellation.
 func (b *Broker) Consume() error {
 
 	go b.sysmon(b.client.Context())
@@ -26,6 +28,9 @@ func (b *Broker) Consume() error {
 
 }
 
+// handler processes a single RabbitMQ delivery message.
+// It unmarshals the JSON payload into a Notification, checks its status,
+// attempts to send it via the notifier, and updates the status accordingly.
 func (b *Broker) handler(ctx context.Context, msg amqp091.Delivery) error {
 
 	var notification models.Notification
@@ -56,6 +61,9 @@ func (b *Broker) handler(ctx context.Context, msg amqp091.Delivery) error {
 
 }
 
+// updateStatus updates the notification status in both cache and storage.
+// It applies automatic transformations: Pending → Sent, Late or timed-out → FailedToSendInTime.
+// Updates are retried according to the configured retry strategy.
 func (b *Broker) updateStatus(ctx context.Context, notificationID string, sendAt time.Time, status string) {
 
 	if status == models.StatusPending {

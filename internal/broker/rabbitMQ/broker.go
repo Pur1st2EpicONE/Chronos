@@ -1,3 +1,5 @@
+// Package rabbitmq provides a RabbitMQ-based implementation of the Broker interface.
+// It manages message publishing, consumption, and system health monitoring.
 package rabbitmq
 
 import (
@@ -22,17 +24,21 @@ const (
 	exchangeKind = "direct"
 )
 
+// Broker is a RabbitMQ implementation of the Broker interface.
+// It holds references to logger, config, consumer, producer, cache, storage, notifier, and the underlying RabbitClient.
 type Broker struct {
-	logger   logger.Logger
-	config   config.Broker
-	Consumer *rabbitmq.Consumer
-	producer *rabbitmq.Publisher
-	cache    cache.Cache
-	storage  repository.Storage
-	notifier notifier.Notifier
-	client   *rabbitmq.RabbitClient
+	logger   logger.Logger          // structured logger for logging broker events
+	config   config.Broker          // broker configuration
+	Consumer *rabbitmq.Consumer     // RabbitMQ consumer instance
+	producer *rabbitmq.Publisher    // RabbitMQ publisher instance
+	cache    cache.Cache            // cache interface for temporary storage
+	storage  repository.Storage     // storage interface for persistent storage
+	notifier notifier.Notifier      // notifier for sending notifications
+	client   *rabbitmq.RabbitClient // underlying RabbitMQ client
 }
 
+// NewBroker creates and initializes a new RabbitMQ Broker instance.
+// It sets up the RabbitMQ client, exchange, queue, producer, and consumer.
 func NewBroker(logger logger.Logger, config config.Broker, cache cache.Cache, storage repository.Storage, notifier notifier.Notifier) (*Broker, error) {
 
 	client, err := rabbitmq.NewClient(rabbitmq.ClientConfig{
@@ -92,6 +98,7 @@ func NewBroker(logger logger.Logger, config config.Broker, cache cache.Cache, st
 
 }
 
+// Shutdown gracefully closes the underlying RabbitMQ client and logs the outcome.
 func (b *Broker) Shutdown() {
 	if err := b.client.Close(); err != nil {
 		b.logger.LogError("broker — failed to shutdown gracefully", err, "layer", "broker.rabbitMQ")
@@ -100,6 +107,8 @@ func (b *Broker) Shutdown() {
 	}
 }
 
+// sysmon runs system monitoring tasks including cleanup, health checks, and recovery.
+// It periodically checks the health of the broker client and triggers recovery if needed.
 func (b *Broker) sysmon(ctx context.Context) {
 
 	b.storage.Cleanup(ctx)
@@ -147,6 +156,8 @@ func (b *Broker) sysmon(ctx context.Context) {
 
 }
 
+// recover retrieves pending notifications from storage and re-queues them for processing.
+// It logs any errors encountered during recovery.
 func (b *Broker) recover(ctx context.Context) {
 	notifications, err := b.storage.Recover(ctx)
 	if err != nil {

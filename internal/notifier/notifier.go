@@ -1,3 +1,5 @@
+// Package notifier provides functionality to send notifications via different channels.
+// Supported channels are Email, Telegram, and Stdout.
 package notifier
 
 import (
@@ -10,23 +12,27 @@ import (
 	"strings"
 )
 
+// Notifier defines the interface for sending notifications.
 type Notifier interface {
-	Notify(notification models.Notification) error
+	Notify(notification models.Notification) error // Notify sends a notification using the specified channel.
 }
 
+// NewNotifier creates a new Notifier instance based on the provided configuration.
 func NewNotifier(config config.Notifier) Notifier {
 	return newSender(config)
 }
 
+// Sender implements the Notifier interface and sends notifications via Email, Telegram, or Stdout.
 type Sender struct {
-	telegramToken    string
-	telegramReceiver string
-	emailSender      string
-	emailPassword    string
-	emailSMTP        string
-	emailSMTPAddr    string
+	telegramToken    string // Telegram bot token
+	telegramReceiver string // Telegram chat ID to receive messages
+	emailSender      string // Email address to send from
+	emailPassword    string // Password or app-specific password for email account
+	emailSMTP        string // SMTP server host
+	emailSMTPAddr    string // SMTP server address (host:port)
 }
 
+// newSender creates a new Sender instance based on the configuration.
 func newSender(config config.Notifier) *Sender {
 	return &Sender{
 		telegramToken:    config.TelegramToken,
@@ -38,6 +44,8 @@ func newSender(config config.Notifier) *Sender {
 	}
 }
 
+// Notify sends the notification using the appropriate channel.
+// Returns an error if sending fails or if the channel is unsupported.
 func (s *Sender) Notify(notification models.Notification) error {
 
 	switch strings.ToLower(notification.Channel) {
@@ -61,6 +69,7 @@ func (s *Sender) Notify(notification models.Notification) error {
 
 }
 
+// sendEmail sends an email to the specified recipients using SMTP.
 func (s *Sender) sendEmail(sendTo []string, subject string, body string) error {
 	auth := smtp.PlainAuth("", s.emailSender, s.emailPassword, s.emailSMTP)
 	message := []byte("Subject: " + subject + "\n" + body)
@@ -70,6 +79,7 @@ func (s *Sender) sendEmail(sendTo []string, subject string, body string) error {
 	return nil
 }
 
+// sendTelegram sends a message via Telegram bot API.
 func (s *Sender) sendTelegram(message string) error {
 
 	apiURL := fmt.Sprintf("https://api.telegram.org/bot%s/sendMessage", s.telegramToken)

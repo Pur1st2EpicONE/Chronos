@@ -10,6 +10,11 @@ import (
 	"github.com/wb-go/wbf/retry"
 )
 
+// Produce publishes a notification to RabbitMQ.
+// It schedules the message for future delivery according to notification.SendAt
+// and ensures reliable delivery using the configured retry strategy.
+// It creates a per-notification queue with TTL and dead-lettering to mainExchange.
+// If the queue already exists due to recovery, it skips re-declaring it.
 func (b *Broker) Produce(notification models.Notification) error {
 
 	sendAt := max(time.Until(notification.SendAt), 0)

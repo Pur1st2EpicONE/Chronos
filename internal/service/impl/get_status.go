@@ -6,6 +6,10 @@ import (
 	"errors"
 )
 
+// GetStatus retrieves the current status of a notification.
+// It first checks the cache, and if not found, falls back to the database.
+// After fetching from the database, the status is updated in the cache for future calls.
+// This ensures a single source of truth while optimizing for read performance.
 func (s *Service) GetStatus(ctx context.Context, notificationID string) (string, error) {
 
 	status, err := s.cache.GetStatus(ctx, notificationID)

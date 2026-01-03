@@ -8,6 +8,10 @@ import (
 	"github.com/wb-go/wbf/retry"
 )
 
+// DeleteNotification deletes a notification by its UUID.
+// The deletion is attempted directly; if no rows are affected,
+// it returns ErrNotificationNotFound. This avoids an extra query
+// to check existence before deleting.
 func (s *Storage) DeleteNotification(ctx context.Context, notificationID string) error {
 
 	query := `

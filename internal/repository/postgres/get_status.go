@@ -8,6 +8,7 @@ import (
 	"github.com/wb-go/wbf/retry"
 )
 
+// GetStatus returns the current status of a notification by its ID.
 func (s *Storage) GetStatus(ctx context.Context, notificationID string) (string, error) {
 
 	query := `

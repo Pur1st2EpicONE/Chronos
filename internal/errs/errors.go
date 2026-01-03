@@ -1,3 +1,5 @@
+// Package errs defines reusable error variables for the Chronos application.
+// These errors cover validation, notification processing, and internal server errors.
 package errs
 
 import "errors"

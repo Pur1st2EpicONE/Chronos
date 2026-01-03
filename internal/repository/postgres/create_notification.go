@@ -9,6 +9,8 @@ import (
 	"github.com/wb-go/wbf/retry"
 )
 
+// CreateNotification saves a new notification and its recipients in one transaction.
+// For email notifications, recipients are stored in a separate table.
 func (s *Storage) CreateNotification(ctx context.Context, notification models.Notification) error {
 
 	strategy := retry.Strategy{

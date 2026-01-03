@@ -9,6 +9,13 @@ import (
 	"github.com/wb-go/wbf/retry"
 )
 
+// SetStatus updates the status of a notification in the database.
+// If the status is "canceled", only notifications that are currently
+// "pending" or "running late" can be canceled. The check for already canceled
+// notifications is done directly in the database rather than in the service layer,
+// because a separate query would be needed anyway to get the current status.
+// This way, each request results in a single query: try to update, and if the DB
+// reports zero affected rows, return the appropriate error.
 func (s *Storage) SetStatus(ctx context.Context, notificationID string, status string) error {
 
 	query := `

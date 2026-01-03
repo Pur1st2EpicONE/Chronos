@@ -9,6 +9,7 @@ import (
 	"unicode/utf8"
 )
 
+// validateCreate performs all checks for a new notification.
 func validateCreate(notification *models.Notification) error {
 
 	if err := validateChannel(notification.Channel); err != nil {
@@ -33,6 +34,7 @@ func validateCreate(notification *models.Notification) error {
 
 }
 
+// validateChannel ensures the channel is set and supported.
 func validateChannel(channel string) error {
 
 	if channel == "" {
@@ -49,6 +51,8 @@ func validateChannel(channel string) error {
 
 }
 
+// validateMessage checks the message length and ensures it's not empty.
+// If the message is empty, a placeholder is set because Telegram does not allow sending empty notifications.
 func validateMessage(message *string) error {
 
 	if utf8.RuneCountInString(*message) > models.MaxMessageLength {
@@ -63,6 +67,7 @@ func validateMessage(message *string) error {
 
 }
 
+// validateSendAt ensures the send time is set, not in the past, and not too far in the future.
 func validateSendAt(t time.Time) error {
 
 	if t.IsZero() {
@@ -82,6 +87,8 @@ func validateSendAt(t time.Time) error {
 	return nil
 
 }
+
+// validateEmails checks that recipients and subject are valid for email notifications.
 func validateEmails(recipients []string, subject string) error {
 
 	if len(recipients) == 0 {
