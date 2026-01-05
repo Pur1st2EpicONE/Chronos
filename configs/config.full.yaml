@@ -1,71 +1,72 @@
-docker: true
+# Docker environment flag
+docker: true                                   # Indicates containerized run; getenv errors are suppressed (envs come from docker-compose)
 
+# Logger configuration
 logger:
-  log_directory: ./logs
-  debug_mode: true
+  log_directory: ./logs                        # Directory for logs, must be mounted via docker-compose volume; if empty, logs are written to stdout
+  debug_mode: true                             # Enable debug-level logging
 
+# HTTP server configuration
 server:
-  port: "8080"
-  read_timeout: 5s
-  write_timeout: 10s
-  max_header_bytes: 1048576
-  shutdown_timeout: 5s
+  port: "8080"                                 # Port where the HTTP server listens
+  read_timeout: 5s                             # Maximum duration for reading the entire request
+  write_timeout: 10s                           # Maximum duration before timing out response writes
+  max_header_bytes: 1048576                    # Maximum size of request headers in bytes
+  shutdown_timeout: 10s                        # Timeout for graceful server shutdown
 
+# Cache (Redis) configuration
 cache:
-  host: redis
-  port: "6379"
-  max_memory: 100mb
-  policy: allkeys-lru
-  expiration_time: 5s
+  host: redis                                  # Redis host
+  port: "6379"                                 # Redis port
+  max_memory: 256mb                            # Maximum memory Redis is allowed to use
+  policy: allkeys-lru                          # Eviction policy when max memory is reached
+  expiration_time: 30s                         # Default TTL for cached entries
   retry_strategy:
-    attempts: 3
-    delay: 3s
-    backoff: 2
+    attempts: 2                                # Number of retry attempts for cache operations
+    delay: 100ms                               # Initial delay between retries
+    backoff: 2                                 # Backoff multiplier for retry delay
 
+# Database (PostgreSQL) configuration
 database:
-  host: postgres
-  port: "5432"
-  dbname: chronos-db
-  sslmode: disable
-  max_open_conns: 57
-  max_idle_conns: 25
-  conn_max_lifetime: 1h
-  recover_limit: 1000
-
+  host: postgres                               # Database host
+  port: "5432"                                 # Database port
+  dbname: chronos-db                           # Database name
+  sslmode: disable                             # SSL mode for database connection
+  max_open_conns: 20                           # Maximum number of open database connections
+  max_idle_conns: 10                           # Maximum number of idle connections
+  conn_max_lifetime: 30m                       # Maximum lifetime of a database connection
+  recover_limit: 1000                          # Max number of notifications to recover and re-queue after DB/broker outage
   query_retry_strategy:
-    attempts: 3
-    delay: 3s
-    backoff: 2
-
+    attempts: 3                                # Number of retry attempts for failed DB queries
+    delay: 200ms                               # Initial delay between retries
+    backoff: 2                                 # Backoff multiplier for retry delay
   retention_strategy:
-    canceled: 1m
-    completed: 1m  
-    failed: 1m    
+    canceled: 10m                              # Retention time for canceled notifications
+    completed: 1h                              # Retention time for successfully delivered notifications
+    failed: 24h                                # Retention time for failed notifications
 
+# Message broker (RabbitMQ) configuration
 broker:
-  url: amqp://guest:guest@rabbitmq:5672/ 
-  queue_name: main
-  connection_name: chronos-broker
-  connect_timeout: 10s
-  cleanup_interval: 5m
-  healthcheck_interval: 15s
-  
+  url: amqp://guest:guest@rabbitmq:5672/       # RabbitMQ connection URL
+  queue_name: main                             # Main queue name
+  connection_name: chronos-broker              # Connection identifier in RabbitMQ
+  connect_timeout: 10s                         # Timeout for establishing broker connection
+  cleanup_interval: 5m                         # Interval at which sysmon runs DB cleanup of outdated notifications
+  healthcheck_interval: 10s                    # Interval for broker health checks
   reconnect:
-    attempts: 3
-    delay: 3s
-    backoff: 2 # delay * backoff
-
+    attempts: 5                                # Number of reconnect attempts on connection loss
+    delay: 1s                                  # Initial delay between reconnect attempts
+    backoff: 2                                 # Backoff multiplier for reconnect delay
   producer:
-    attempts: 3
-    delay: 150ms
-    backoff: 1.5
-    message_queue_ttl: 30s
-
+    attempts: 3                                # Number of retry attempts when publishing a message
+    delay: 200ms                               # Initial delay between publish retries
+    backoff: 2                                 # Backoff multiplier for publish retry delay
+    message_queue_ttl: 30s                     # TTL of the empty per-notification delay queue
   consumer:
-    attempts: 3
-    delay: 150ms
-    backoff: 1.5
-    consumer_tag: chronos-worker
-    auto_ack: true
-    workers: 2
-    prefetch_count: 1
+    attempts: 5                                # Number of retry attempts for message processing
+    delay: 500ms                               # Initial delay between processing retries
+    backoff: 2                                 # Backoff multiplier for processing retry delay
+    consumer_tag: chronos-worker               # Consumer identifier
+    auto_ack: true                             # Automatically acknowledge messages after delivery
+    workers: 2                                 # Number of concurrent consumer workers
+    prefetch_count: 5                          # Number of messages prefetched per worker
