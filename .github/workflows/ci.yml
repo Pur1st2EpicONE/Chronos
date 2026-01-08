@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  push:
+    branches: ["main", "master"]
+  pull_request:
+    branches: ["main", "master"]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres-test:
+        image: postgres:latest
+        env:
+          POSTGRES_USER: ci_user
+          POSTGRES_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          POSTGRES_DB: chronos_test
+        ports:
+          - 5434:5432
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25.1'
+
+      - name: Install golangci-lint
+        run: |
+          go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+          echo "${GOPATH:-$(go env GOPATH)}/bin" >> $GITHUB_PATH
+
+      - name: Run golangci-lint
+        run: golangci-lint run ./...
+
+      - name: Install migrate CLI
+        run: go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+
+      - name: Run unit tests
+        run: |
+          cp .env.example .env
+          cp ./configs/config.dev.yaml ./config.yaml
+          go test -cover ./internal/handler/v1/...
+          go test -cover ./internal/service/impl/...
+
+      - name: Run integration tests
+        env:
+          DB_USER: ci_user
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        run: |
+          until pg_isready -h localhost -p 5434 -U $DB_USER; do sleep 0.5; done
+          for i in $(seq 1 10); do
+            migrate -path ./migrations -database "postgres://$DB_USER:$DB_PASSWORD@localhost:5434/chronos_test?sslmode=disable" up && break
+            echo "Retry $i/10..."
+            sleep 1
+          done
+          go test ./internal/repository/postgres -cover
