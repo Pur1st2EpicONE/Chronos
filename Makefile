@@ -1,4 +1,4 @@
-.PHONY: all up down reset local migrate-up migrate-down test postgres rabbit redis app_logs postgres_logs rabbit_logs redis_logs queues lint .env help
+.PHONY: all up down reset local migrate-up migrate-down test postgres rabbit redis app_logs postgres_logs rabbit_logs redis_logs queues lint .env .env.example help
 .POSIX:
 .SILENT:
 
@@ -20,7 +20,7 @@ up:
 
 down:
 	docker compose down 2>/dev/null || true 
-	rm -f Dockerfile docker-compose.yaml config.yaml .env
+	rm -f Dockerfile docker-compose.yaml config.yaml
 
 reset:
 	docker volume rm chronos_postgres_data

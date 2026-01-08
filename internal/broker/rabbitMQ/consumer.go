@@ -81,7 +81,7 @@ func (b *Broker) updateStatus(ctx context.Context, notificationID string, sendAt
 	}, func() error {
 		return b.cache.SetStatus(ctx, notificationID, status)
 	}); err != nil {
-		b.logger.LogError("broker — failed to update notification status in cache",
+		b.logger.LogError("consumer — failed to update notification status in cache",
 			err, "notificationID", notificationID, "layer", "broker.rabbitMQ")
 	}
 
@@ -90,7 +90,7 @@ func (b *Broker) updateStatus(ctx context.Context, notificationID string, sendAt
 		Delay:    b.config.Consumer.Delay,
 		Backoff:  b.config.Consumer.Backoff,
 	}, func() error { return b.storage.SetStatus(ctx, notificationID, status) }); err != nil {
-		b.logger.LogError("broker — failed to update notification status in db",
+		b.logger.LogError("consumer — failed to update notification status in db",
 			err, "notificationID", notificationID, "layer", "broker.rabbitMQ")
 	}
 

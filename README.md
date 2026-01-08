@@ -33,8 +33,7 @@
 <br>
 
 ## Installation
-⚠️ Prerequisite:
-This project requires Docker Compose, regardless of how you choose to run it.  
+⚠️ Note: This project requires Docker Compose, regardless of how you choose to run it.  
 
 First, clone the repository and enter the project folder:
 
@@ -82,5 +81,24 @@ By default, Chronos runs without any external notification credentials. In this 
 Chronos uses a .env file for runtime configuration. You may create your own .env file manually before running the service, or edit [.env.example](.env.example) and let it be copied automatically on startup.
 If environment file does not exist, .env.example is copied to create it. If environment file already exists, it is used as-is and will not be overwritten.
 
-⚠️ Note: Do not remove .env.example. It is required by the Makefile, even if it is not being used as the template.
+⚠️ Note: Keep .env.example for local runs. Some Makefile commands rely on it and may break if it's missing.
 
+<br>
+
+## Shutting down
+
+Stopping Chronos depends on how it was started:
+
+- Local setup — press Ctrl+C to send SIGINT to the application. The service will gracefully close connections and finish any in-progress operations.  
+- Full Docker setup — containers run by Docker Compose will be stopped automatically.
+
+In both cases, to stop all services and clean up containers, run:
+
+```bash
+make down
+```
+
+⚠️ Note: In the full Docker setup, the log folder is created by the container as root and will not be removed automatically. To delete it manually, run:
+```bash
+sudo rm -rf <log-folder>
+```

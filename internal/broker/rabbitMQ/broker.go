@@ -101,9 +101,9 @@ func NewBroker(logger logger.Logger, config config.Broker, cache cache.Cache, st
 // Shutdown gracefully closes the underlying RabbitMQ client and logs the outcome.
 func (b *Broker) Shutdown() {
 	if err := b.client.Close(); err != nil {
-		b.logger.LogError("broker — failed to shutdown gracefully", err, "layer", "broker.rabbitMQ")
+		b.logger.LogError("rabbit — failed to shutdown gracefully", err, "layer", "broker.rabbitMQ")
 	} else {
-		b.logger.LogInfo("broker — shutdown complete", "layer", "broker.rabbitMQ")
+		b.logger.LogInfo("rabbit — shutdown complete", "layer", "broker.rabbitMQ")
 	}
 }
 
@@ -138,11 +138,11 @@ func (b *Broker) sysmon(ctx context.Context) {
 			wasUnhealthy = true
 			lates, err := b.storage.MarkLates(ctx)
 			if err != nil {
-				b.logger.LogError("broker — failed to mark late notifications in db", err, "layer", "broker.rabbitMQ")
+				b.logger.LogError("rabbit — failed to mark late notifications in db", err, "layer", "broker.rabbitMQ")
 				continue
 			}
 			if err := b.cache.MarkLates(ctx, lates); err != nil {
-				b.logger.LogError("broker — failed to mark late notifications in cache", err, "layer", "broker.rabbitMQ")
+				b.logger.LogError("rabbit — failed to mark late notifications in cache", err, "layer", "broker.rabbitMQ")
 			}
 			continue
 		}
@@ -161,13 +161,13 @@ func (b *Broker) sysmon(ctx context.Context) {
 func (b *Broker) recover(ctx context.Context) {
 	notifications, err := b.storage.Recover(ctx)
 	if err != nil {
-		b.logger.LogError("broker — failed to recover notifications from db", err, "layer", "broker.rabbitMQ")
+		b.logger.LogError("rabbit — failed to recover notifications from db", err, "layer", "broker.rabbitMQ")
 		return
 	}
 	for _, notification := range notifications {
 		if err := b.Produce(notification); err != nil {
-			b.logger.LogError("broker — failed to produce notification", err, "notificationID", notification.ID, "layer", "broker.rabbitMQ")
+			b.logger.LogError("rabbit — failed to produce notification", err, "notificationID", notification.ID, "layer", "broker.rabbitMQ")
 		}
 	}
-	b.logger.Debug("broker — recovered", "layer", "broker.rabbitMQ")
+	b.logger.Debug("rabbit — recovered", "layer", "broker.rabbitMQ")
 }
