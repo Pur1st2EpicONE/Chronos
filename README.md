@@ -8,6 +8,20 @@
 
 <br>
 
+## Table of Contents
+
+0. [Architecture](#Architecture)
+1. [Installation](#Installation)
+2. [Configuration](#Configuration)
+3. [Shutting down](#Shutting-down)
+4. [API](#API)
+5. [Validation](#Validation)
+6. [Broker behavior](#Broker-behavior)
+7. [Status values](#Status-values)
+8. [Request examples](#Request-examples)
+
+<br>
+
 ## Architecture
 
 - **App** — the central orchestrator of the system.  
@@ -101,4 +115,343 @@ make down
 ⚠️ Note: In the full Docker setup, the log folder is created by the container as root and will not be removed automatically. To delete it manually, run:
 ```bash
 sudo rm -rf <log-folder>
+```
+
+<br>
+
+## API
+
+All endpoints are mounted under /api/v1. Responses follow a simple wrapper convention:
+
+- Success: **200 OK** with JSON body **{"result": \<value>}**
+- Error: appropriate status code with JSON body **{"error": "\<message>"}**
+
+<br>
+
+### Create notification 
+
+```bash
+POST /api/v1/notify 
+```
+
+Request body example:
+```json
+{
+  "channel": "email",
+  "subject": "email subject",
+  "message": "optional notification text",
+  "send_at": "2026-01-10T02:21:00+02:00",
+  "send_to": ["recipient1@example.com", "recipient2@example.com"]
+}
+```
+
+**channel** (string, required) Channel to deliver the notification.
+
+**subject** (string, required for email, not used for other channels) Email subject.
+
+**message** (string) Notification body.
+
+**send_at** (string, required) Scheduled send time in RFC3339 format. 
+
+**send_to** (array of strings, required for email) One or more notification recipients.
+
+<br>
+
+On success, the API returns 200 OK and notification id. Example:
+
+```json
+{
+  "result": "123e4567-e89b-12d3-a456-426614174000"
+}
+```
+
+Typical error responses
+
+- **400 Bad Request** — invalid JSON, missing fields, invalid send_at format, validation failures (see [Validation](#Validation)).
+- **500 Internal Server Error** — urgent broker failure (see [Broker behavior](#Broker-behavior)) or other internal failures.
+
+<br>
+
+### Get notification status
+
+```bash
+GET /api/v1/notify?id=<notification_id>
+```
+
+Query parameter: **id** (string, required) — notification UUID.
+
+
+
+On success, the API returns 200 OK and notification status (see [Status values](#Status-values)). Example:
+```json
+{
+  "result": "pending"
+}
+```
+
+Error codes:
+
+**400 Bad Request** — invalid UUID format.
+
+**404 Not Found** — notification not found.
+
+**500 Internal Server Error** — internal error while fetching status.
+
+<br>
+
+### Cancel notification
+
+```bash
+DELETE /api/v1/notify?id=<notification_id>
+```
+
+Attempts to cancel a notification. Cancellation logic is implemented so that a single DB query determines if a cancel is possible (to avoid a prior read); cache is used to optimize common cases.
+
+Query parameter: **id** (string, required) — notification UUID.
+
+On success, the API returns 200 OK and notification status "canceled" (see [Status values](#Status-values)). Example:
+```json
+{
+  "result": "canceled"
+}
+```
+
+Error codes:
+
+**400 Bad Request** — invalid UUID format or cancellation not allowed (e.g., already sent).
+
+**404 Not Found** — notification not found.
+
+**500 Internal Server Error** — internal failure when updating status.
+
+<br>
+
+## Validation
+
+The **channel** field must be present. It supports values such as telegram, email, or stdout, and these are case-insensitive. If an unknown channel is provided, the service returns **ErrUnsupportedChannel** with a 400 status code.
+
+For the **message** field, the maximum length is enforced through **[MaxMessageLength](https://github.com/Pur1st2EpicONE/Chronos/blob/21e1b36271f2e2f954388e34d3d1f9ec5e2f3d99/internal/models/models.go#L40)**. If the length exceeds this constant, it results in **ErrMessageTooLong** with a 400 status code. If the message is empty, the server saves a placeholder character ("ㅤ" — U+3164 Hangul Filler) to ensure compatibility with channels like Telegram that do not allow empty bodies.
+
+The **send_at** field must be provided. It needs to parse correctly as RFC3339 format, with examples of valid values including "2026-01-09T02:14:00Z" or "2026-01-09T04:14:00+02:00". If parsing fails, the service returns **ErrInvalidSendAt** with a 400 status code. Additionally, the send_at time must not be in the past, which would trigger **ErrSendAtInPast** with a 400 status code, and it must not be too far in the future—specifically, no greater than one year from now—or it will return **ErrSendAtTooFar** with a 400 status code.
+
+When the **channel** is set to email, additional validations apply. The **send_to** field must be non-empty, or it will return **ErrMissingSendTo** with a 400 status code. The **subject** must be present, triggering **ErrMissingEmailSubject** with a 400 status code if missing. The subject length is limited by **[MaxSubjectLength](https://github.com/Pur1st2EpicONE/Chronos/blob/21e1b36271f2e2f954388e34d3d1f9ec5e2f3d99/internal/models/models.go#L39)**, and exceeding this leads to **ErrEmailSubjectTooLong** with a 400 status code. Each recipient in send_to must be a valid email address, otherwise **ErrInvalidEmailFormat** is returned with a 400 status code. Finally, each recipient's length is capped by **[MaxEmailLength](https://github.com/Pur1st2EpicONE/Chronos/blob/21e1b36271f2e2f954388e34d3d1f9ec5e2f3d99/internal/models/models.go#L38)**, resulting in **ErrRecipientTooLong** with a 400 status code if exceeded.
+
+⚠️ Note: Some numeric limits, such as **MaxMessageLength**, are defined in the codebase; refer to **[internal/models](internal/models/models.go)** for the concrete values.
+
+<br>
+
+## Error mapping and error codes
+
+The API maps internal errors to HTTP statuses.
+
+### 400 Bad Request
+
+This status is returned for validation and client errors. Examples include:
+
+- **ErrInvalidJSON**: "invalid JSON format"
+- **ErrInvalidNotificationID**: "missing or invalid notification ID"
+- **ErrMissingChannel**: "channel is required"
+- **ErrUnsupportedChannel**: "unsupported channel"
+- **ErrMessageTooLong**: "message exceeds maximum length"
+- **ErrMissingSendAt**: "send_at is required"
+- **ErrInvalidSendAt**: "invalid send_at format, expected RFC3339"
+- **ErrSendAtInPast**: "send_at cannot be in the past"
+- **ErrSendAtTooFar**: "send_at is too far in the future"
+- **ErrMissingSendTo**: "send_to is required"
+- **ErrMissingEmailSubject**: "email subject is required"
+- **ErrEmailSubjectTooLong**: "email subject is too long"
+- **ErrInvalidEmailFormat**: "invalid email format"
+- **ErrCannotCancel**: "notification cannot be canceled in its current state"
+- **ErrAlreadyCanceled**: "notification is already canceled"
+- **ErrRecipientTooLong**: "recipient exceeds maximum length"
+
+<br>
+
+The error body for these cases follows the format:
+```json
+{ "error": "<human-friendly message>" }
+```
+
+where the message corresponds to the specific error string.
+
+### 404 Not Found
+
+This status is returned when a notification cannot be located:
+
+- **ErrNotificationNotFound**: "notification with given ID not found"
+
+### 500 Internal Server Error
+
+This status handles more severe issues, including:
+
+- **ErrUrgentDeliveryFailed**: "cannot schedule notification for immediate delivery — service is temporarily unavailable" (explicitly triggered when the broker fails for urgent notifications)
+- Other unhandled or internal errors, mapped to a generic **ErrInternal** message: "internal server error"
+
+
+<br>
+
+## Broker behavior
+
+After a successful validation and DB insert, the service attempts to enqueue the notification to the broker. If the broker produce fails and the notification's send time is within the **[brokerRecoveryWindow](https://github.com/Pur1st2EpicONE/Chronos/blob/21e1b36271f2e2f954388e34d3d1f9ec5e2f3d99/internal/service/impl/create_notification.go#L12)** (currently 1 hour), the service attempts to delete the notification from storage and returns **ErrUrgentDeliveryFailed**, which maps to a 500 Internal Server Error.
+
+If the broker produce fails but the notification is not within brokerRecoveryWindow (that is, scheduled later than 1 hour from now), the service does not return an error. Instead, the code logs the broker failure but continues, meaning the notification remains in storage and the caller receives a success response with the created ID, even though the broker enqueue temporarily failed.
+
+
+
+The broker runs a system monitoring task, sysmon, which periodically performs cleanup, health checks, and recovery. It checks the health of the broker client at intervals defined by **[HealthcheckInterval](https://github.com/Pur1st2EpicONE/Chronos/blob/21e1b36271f2e2f954388e34d3d1f9ec5e2f3d99/configs/config.full.yaml#L55)**
+. If the broker is unhealthy, it marks notifications that are past their scheduled send time by updating their status from pending to late (also known as running late) and updates the cache accordingly. When the broker recovers and becomes healthy again, it triggers recovery to re-queue pending and late notifications.
+
+The recover function retrieves notifications with statuses pending or late from storage, ordered by send_at and limited by **[RecoverLimit](https://github.com/Pur1st2EpicONE/Chronos/blob/21e1b36271f2e2f954388e34d3d1f9ec5e2f3d99/configs/config.full.yaml#L38)**, then re-queues them by calling Produce on each.
+
+Implication: Callers that depend on immediate enqueue reliability for near-term notifications must handle the possibility of **ErrUrgentDeliveryFailed**. For notifications scheduled further in the future, enqueue retries or broker reconciliation processes (such as recovery during sysmon) should handle eventual enqueue.
+
+<br>
+
+## Status values
+
+**pending** — Notification is created but not yet sent.
+
+**canceled** — Notification has been canceled.
+
+**sent** — Notification was successfully sent.
+
+**failed to send** — Notification failed to send due to error. This happens if something goes wrong on the side of the external API, for example, if the Telegram bot token is incorrect and the Telegram API responds with a forbidden error.
+
+**running late** — Notification delayed past its scheduled send time. This status is set automatically by the broker's sysmon process when it detects that the broker is down. During the health check, sysmon updates notifications that have passed their send_at from pending to running late.
+
+**failed to send in time** — Notification failed to send before scheduled time. This occurs when, at the moment the sending should have happened, the broker was down, so the consumer did not read the message and did not send it on time. Later, when the broker recovers, the consumer sends the notification as soon as possible, but already with a clear delay.
+
+<br>
+
+## Request examples
+
+⚠️ Note: When the service is running, a web-based UI is available at http://localhost:8080. The examples below demonstrate how to interact with the API directly using curl.
+
+### Create Notification (stdout)
+
+```bash
+curl -X POST http://localhost:8080/api/v1/notify \
+  -H "Content-Type: application/json" \
+  -d '{
+    "channel": "stdout",
+    "send_at": "2026-01-09T05:51:00+02:00"
+  }'
+```
+
+### Response
+
+```json
+{
+  "result": "40e9f0d7-ec78-45f8-9961-8a1728ec9d6f"
+}
+```
+
+<br>
+
+### Create Notification (telegram)
+
+```bash
+curl -X POST http://localhost:8080/api/v1/notify \
+  -H "Content-Type: application/json" \
+  -d '{
+    "channel": "telegram",
+    "message": "Hello from Chronos!",
+    "send_at": "2026-01-09T05:40:00+02:00"
+  }'
+```
+
+### Response
+
+```json
+{
+  "result": "4b0c9d28-f30c-4503-ad3c-430a82b40dd3"
+}
+```
+
+<br>
+
+### Create Notification (email)
+
+```bash
+curl -X POST http://localhost:8080/api/v1/notify \
+  -H "Content-Type: application/json" \
+  -d '{
+    "channel": "email",
+    "subject": "Email example",
+    "message": "Hello from Chronos!",
+    "send_to": ["example1@gmail.com", "example2@gmail.com"],
+    "send_at": "2026-01-09T05:39:00+02:00"
+  }'
+```
+
+### Response
+
+```json
+{
+  "result": "54c61eb2-1e54-4863-a76e-caffc85284fd"
+}
+```
+
+<br>
+
+### Cancel Notification (stdout)
+
+```bash
+curl -X DELETE "http://localhost:8080/api/v1/notify?id=40e9f0d7-ec78-45f8-9961-8a1728ec9d6f"
+```
+
+### Response
+
+```json
+{
+  "result": "canceled"
+}
+```
+
+<br>
+
+### Get Notification Status (email)
+
+```bash
+curl "http://localhost:8080/api/v1/notify?id=54c61eb2-1e54-4863-a76e-caffc85284fd"
+```
+
+Response:
+
+```json
+{
+  "result": "sent"
+}
+```
+
+<br>
+
+### Get Notification Status (telegram)
+
+```bash
+curl "http://localhost:8080/api/v1/notify?id=4b0c9d28-f30c-4503-ad3c-430a82b40dd3"
+```
+
+Response:
+
+```json
+{
+  "result": "pending"
+}
+```
+
+<br>
+
+### Get Notification Status (stdout)
+
+```bash
+curl "http://localhost:8080/api/v1/notify?id=40e9f0d7-ec78-45f8-9961-8a1728ec9d6f"
+```
+
+Response:
+
+```json
+{
+  "result": "canceled"
+}
 ```

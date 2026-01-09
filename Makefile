@@ -26,9 +26,9 @@ reset:
 	docker volume rm chronos_postgres_data
 
 local:
-	cat .env.example > .env
-	cp ./configs/config.dev.yaml ./config.yaml
-	cp ./deployments/docker-compose.dev.yaml ./docker-compose.yaml
+	if [ ! -f .env ]; then cat .env.example > .env; fi 
+	if [ ! -f config.yaml ]; then cp ./configs/config.dev.yaml ./config.yaml; fi 
+	if [ ! -f docker-compose.yaml ]; then cp ./deployments/docker-compose.dev.yaml ./docker-compose.yaml; fi
 	docker compose up -d postgres rabbitmq redis
 	until docker exec postgres pg_isready -U ${DB_USER} > /dev/null 2>&1; do sleep 0.5; done
 	$(MAKE) --no-print-directory migrate-up
