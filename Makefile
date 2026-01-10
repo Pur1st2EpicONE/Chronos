@@ -15,7 +15,7 @@ up:
 	if [ ! -f config.yaml ]; then cp ./configs/config.full.yaml ./config.yaml; fi
 	if [ ! -f docker-compose.yaml ]; then cp ./deployments/docker-compose.full.yaml ./docker-compose.yaml; fi
 	if [ ! -f Dockerfile ]; then cp ./deployments/Dockerfile ./Dockerfile; fi
-	docker-compose up -d postgres rabbitmq redis app
+	docker compose up -d postgres rabbitmq redis app
 	rm -f Dockerfile
 
 down:

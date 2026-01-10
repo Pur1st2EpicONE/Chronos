@@ -8,7 +8,7 @@ logger:
 
 # HTTP server configuration
 server:
-  port: "8080"                                 # Port where the HTTP server listens
+  port: "8080"                                 # Port where the HTTP server listens; must match the exposed port in docker-compose.full.yaml
   read_timeout: 5s                             # Maximum duration for reading the entire request
   write_timeout: 10s                           # Maximum duration before timing out response writes
   max_header_bytes: 1048576                    # Maximum size of request headers in bytes
@@ -17,7 +17,7 @@ server:
 # Cache (Redis) configuration
 cache:
   host: redis                                  # Redis host
-  port: "6379"                                 # Redis port
+  port: "6379"                                 # Redis port; must match the exposed port in docker-compose.full.yaml
   max_memory: 256mb                            # Maximum memory Redis is allowed to use
   policy: allkeys-lru                          # Eviction policy when max memory is reached
   expiration_time: 30s                         # Default TTL for cached entries
@@ -29,7 +29,7 @@ cache:
 # Database (PostgreSQL) configuration
 database:
   host: postgres                               # Database host
-  port: "5432"                                 # Database port
+  port: "5432"                                 # Database port; must match the exposed port in docker-compose.full.yaml
   dbname: chronos-db                           # Database name
   sslmode: disable                             # SSL mode for database connection
   max_open_conns: 20                           # Maximum number of open database connections
