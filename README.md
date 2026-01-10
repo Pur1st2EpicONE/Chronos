@@ -10,15 +10,16 @@
 
 ## Table of Contents
 
-0. [Architecture](#Architecture)
-1. [Installation](#Installation)
-2. [Configuration](#Configuration)
-3. [Shutting down](#Shutting-down)
-4. [API](#API)
-5. [Validation](#Validation)
-6. [Broker behavior](#Broker-behavior)
-7. [Status values](#Status-values)
-8. [Request examples](#Request-examples)
+- [Architecture](#architecture)
+- [Installation](#installation)
+- [Configuration](#configuration)
+- [Shutting down](#shutting-down)
+- [API](#api)
+- [Validation](#validation)
+- [Error mapping and error codes](#error-mapping-and-error-codes)
+- [Broker behavior](#broker-behavior)
+- [Status values](#status-values)
+- [Request examples](#request-examples)
 
 <br>
 
@@ -41,6 +42,9 @@
 
 - **Storage** — the persistent data layer and source of truth (PostgreSQL).  
   Stores notifications, recipients, statuses, and timestamps. Implements transactional updates, recovery queries and cleanup logic based on retention rules. All critical state transitions ultimately pass through storage.
+
+- **Notifier** — the delivery adapter layer for outbound notifications.    
+  Responsible for delivering notifications to external channels. Encapsulates all channel-specific protocols, credentials, and transport logic behind a unified interface.
 
 ![chronos diagram](assets/diagram.png)
 
@@ -115,6 +119,11 @@ make down
 ⚠️ Note: In the full Docker setup, the log folder is created by the container as root and will not be removed automatically. To delete it manually, run:
 ```bash
 sudo rm -rf <log-folder>
+```
+
+⚠️ Note: Docker Compose also creates a persistent volume for PostgreSQL data (chronos_postgres_data). This volume is not removed automatically when containers are stopped. To remove it and fully reset the environment, run:
+```bash
+make reset
 ```
 
 <br>
@@ -228,13 +237,13 @@ Error codes:
 
 ## Validation
 
-The **channel** field must be present. It supports values such as telegram, email, or stdout, and these are case-insensitive. If an unknown channel is provided, the service returns **ErrUnsupportedChannel** with a 400 status code.
+The **channel** field must be present. It supports values such as telegram, email, or stdout, and these are case-insensitive. If an unknown channel is provided, the service returns **ErrUnsupportedChannel** (see [Error mapping](#Error-mapping-and-error-codes)).
 
-For the **message** field, the maximum length is enforced through **[MaxMessageLength](https://github.com/Pur1st2EpicONE/Chronos/blob/21e1b36271f2e2f954388e34d3d1f9ec5e2f3d99/internal/models/models.go#L40)**. If the length exceeds this constant, it results in **ErrMessageTooLong** with a 400 status code. If the message is empty, the server saves a placeholder character ("ㅤ" — U+3164 Hangul Filler) to ensure compatibility with channels like Telegram that do not allow empty bodies.
+For the **message** field, the maximum length is enforced through **[MaxMessageLength](https://github.com/Pur1st2EpicONE/Chronos/blob/21e1b36271f2e2f954388e34d3d1f9ec5e2f3d99/internal/models/models.go#L40)**. If the length exceeds this constant, it results in **ErrMessageTooLong**. If the message is empty, the server saves a placeholder character ("ㅤ" — U+3164 Hangul Filler) to ensure compatibility with channels like Telegram that do not allow empty bodies.
 
-The **send_at** field must be provided. It needs to parse correctly as RFC3339 format, with examples of valid values including "2026-01-09T02:14:00Z" or "2026-01-09T04:14:00+02:00". If parsing fails, the service returns **ErrInvalidSendAt** with a 400 status code. Additionally, the send_at time must not be in the past, which would trigger **ErrSendAtInPast** with a 400 status code, and it must not be too far in the future—specifically, no greater than one year from now—or it will return **ErrSendAtTooFar** with a 400 status code.
+The **send_at** field must be provided. It needs to parse correctly as RFC3339 format, with examples of valid values including "2026-01-09T02:14:00Z" or "2026-01-09T04:14:00+02:00". If parsing fails, the service returns **ErrInvalidSendAt**. Additionally, the send_at time must not be in the past, which would trigger **ErrSendAtInPast**, and it must not be too far in the future—specifically, no greater than one year from now—or it will return **ErrSendAtTooFar**.
 
-When the **channel** is set to email, additional validations apply. The **send_to** field must be non-empty, or it will return **ErrMissingSendTo** with a 400 status code. The **subject** must be present, triggering **ErrMissingEmailSubject** with a 400 status code if missing. The subject length is limited by **[MaxSubjectLength](https://github.com/Pur1st2EpicONE/Chronos/blob/21e1b36271f2e2f954388e34d3d1f9ec5e2f3d99/internal/models/models.go#L39)**, and exceeding this leads to **ErrEmailSubjectTooLong** with a 400 status code. Each recipient in send_to must be a valid email address, otherwise **ErrInvalidEmailFormat** is returned with a 400 status code. Finally, each recipient's length is capped by **[MaxEmailLength](https://github.com/Pur1st2EpicONE/Chronos/blob/21e1b36271f2e2f954388e34d3d1f9ec5e2f3d99/internal/models/models.go#L38)**, resulting in **ErrRecipientTooLong** with a 400 status code if exceeded.
+When the **channel** is set to email, additional validations apply. The **send_to** field must be non-empty, or it will return **ErrMissingSendTo**. The **subject** must be present, triggering **ErrMissingEmailSubject** if missing. The subject length is limited by **[MaxSubjectLength](https://github.com/Pur1st2EpicONE/Chronos/blob/21e1b36271f2e2f954388e34d3d1f9ec5e2f3d99/internal/models/models.go#L39)**, and exceeding this leads to **ErrEmailSubjectTooLong**. Each recipient in send_to must be a valid email address, otherwise **ErrInvalidEmailFormat** is returned. Finally, each recipient's length is capped by **[MaxEmailLength](https://github.com/Pur1st2EpicONE/Chronos/blob/21e1b36271f2e2f954388e34d3d1f9ec5e2f3d99/internal/models/models.go#L38)**, resulting in **ErrRecipientTooLong** if exceeded.
 
 ⚠️ Note: Some numeric limits, such as **MaxMessageLength**, are defined in the codebase; refer to **[internal/models](internal/models/models.go)** for the concrete values.
 
@@ -269,7 +278,7 @@ This status is returned for validation and client errors. Examples include:
 
 The error body for these cases follows the format:
 ```json
-{ "error": "<human-friendly message>" }
+{ "error": "<error message>" }
 ```
 
 where the message corresponds to the specific error string.
@@ -292,11 +301,9 @@ This status handles more severe issues, including:
 
 ## Broker behavior
 
-After a successful validation and DB insert, the service attempts to enqueue the notification to the broker. If the broker produce fails and the notification's send time is within the **[brokerRecoveryWindow](https://github.com/Pur1st2EpicONE/Chronos/blob/21e1b36271f2e2f954388e34d3d1f9ec5e2f3d99/internal/service/impl/create_notification.go#L12)** (currently 1 hour), the service attempts to delete the notification from storage and returns **ErrUrgentDeliveryFailed**, which maps to a 500 Internal Server Error.
+After a successful validation and DB insert, the service attempts to enqueue the notification to the broker. If the broker is unavailable and the notification's send time is within the **[brokerRecoveryWindow](https://github.com/Pur1st2EpicONE/Chronos/blob/21e1b36271f2e2f954388e34d3d1f9ec5e2f3d99/internal/service/impl/create_notification.go#L12)**, the service attempts to delete the notification from storage and returns **ErrUrgentDeliveryFailed**, which maps to a 500 Internal Server Error.
 
-If the broker produce fails but the notification is not within brokerRecoveryWindow (that is, scheduled later than 1 hour from now), the service does not return an error. Instead, the code logs the broker failure but continues, meaning the notification remains in storage and the caller receives a success response with the created ID, even though the broker enqueue temporarily failed.
-
-
+If the broker produce fails but the notification is not within **brokerRecoveryWindow** (that is, scheduled later than 1 hour from now), the service does not return an error. Instead, the code logs the broker failure but continues, meaning the notification remains in storage and the caller receives a success response with the created ID, even though the broker enqueue temporarily failed.
 
 The broker runs a system monitoring task, sysmon, which periodically performs cleanup, health checks, and recovery. It checks the health of the broker client at intervals defined by **[HealthcheckInterval](https://github.com/Pur1st2EpicONE/Chronos/blob/21e1b36271f2e2f954388e34d3d1f9ec5e2f3d99/configs/config.full.yaml#L55)**
 . If the broker is unhealthy, it marks notifications that are past their scheduled send time by updating their status from pending to late (also known as running late) and updates the cache accordingly. When the broker recovers and becomes healthy again, it triggers recovery to re-queue pending and late notifications.
@@ -315,7 +322,7 @@ Implication: Callers that depend on immediate enqueue reliability for near-term 
 
 **sent** — Notification was successfully sent.
 
-**failed to send** — Notification failed to send due to error. This happens if something goes wrong on the side of the external API, for example, if the Telegram bot token is incorrect and the Telegram API responds with a forbidden error.
+**failed to send** — Notification failed to send due to error. This happens if something goes wrong on the side of the external API, for example, if the Telegram bot token is incorrect and the Telegram API responds with an error.
 
 **running late** — Notification delayed past its scheduled send time. This status is set automatically by the broker's sysmon process when it detects that the broker is down. During the health check, sysmon updates notifications that have passed their send_at from pending to running late.
 
