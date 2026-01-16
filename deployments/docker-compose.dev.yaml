@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:latest
+    image: postgres:16.2-alpine
     container_name: postgres
     environment:
       POSTGRES_USER: ${DB_USER}
@@ -9,11 +9,11 @@ services:
     ports:
       - 5433:5432
     volumes:
-      - postgres_data:/var/lib/postgresql
+      - postgres_data:/var/lib/postgresql/data
     restart: on-failure
 
   postgres-test:
-    image: postgres:latest
+    image: postgres:16.2-alpine
     container_name: postgres-test
     environment:
       POSTGRES_USER: ${DB_USER}
