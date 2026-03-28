@@ -15,7 +15,7 @@ up:
 	if [ ! -f config.yaml ]; then cp ./configs/config.full.yaml ./config.yaml; fi
 	if [ ! -f docker-compose.yaml ]; then cp ./deployments/docker-compose.full.yaml ./docker-compose.yaml; fi
 	if [ ! -f Dockerfile ]; then cp ./deployments/Dockerfile ./Dockerfile; fi
-	docker compose up -d postgres rabbitmq redis app
+	COMPOSE_BAKE=true docker compose up -d postgres rabbitmq redis app
 	rm -f Dockerfile
 
 down:
@@ -29,7 +29,7 @@ local:
 	if [ ! -f .env ]; then cat .env.example > .env; fi 
 	if [ ! -f config.yaml ]; then cp ./configs/config.dev.yaml ./config.yaml; fi 
 	if [ ! -f docker-compose.yaml ]; then cp ./deployments/docker-compose.dev.yaml ./docker-compose.yaml; fi
-	docker compose up -d postgres rabbitmq redis
+	COMPOSE_BAKE=true docker compose up -d postgres rabbitmq redis
 	until docker exec postgres pg_isready -U ${DB_USER} > /dev/null 2>&1; do sleep 0.5; done
 	$(MAKE) --no-print-directory migrate-up
 	until docker exec rabbitmq rabbitmqctl status > /dev/null 2>&1; do sleep 0.5; done
@@ -50,7 +50,7 @@ test:
 	cp ./deployments/docker-compose.dev.yaml ./docker-compose.yaml
 	go test -cover ./internal/handler/v1/...
 	go test -cover ./internal/service/impl/...
-	docker compose -f docker-compose.yaml up -d postgres-test > /dev/null 2>&1
+	COMPOSE_BAKE=true docker compose -f docker-compose.yaml up -d postgres-test > /dev/null 2>&1
 	until docker exec postgres-test pg_isready -U ${DB_USER} > /dev/null 2>&1; do sleep 0.5; done
 	for i in $$(seq 1 10); do \
 		migrate -path ./migrations -database "postgres://${DB_USER}:${DB_PASSWORD}@localhost:5434/chronos_test?sslmode=disable" up > /dev/null 2>&1 && exit 0; sleep 1; \
@@ -70,16 +70,16 @@ redis:
 	docker compose exec redis redis-cli
 
 app_logs:
-	docker compose logs --tail 5 app
+	docker compose logs --tail 10 app
 
 postgres_logs:
-	docker compose logs --tail 5 postgres
+	docker compose logs --tail 10 postgres
 
 rabbit_logs:
-	docker compose logs --tail 5 rabbitmq
+	docker compose logs --tail 10 rabbitmq
 
 redis_logs:
-	docker compose logs --tail 5 redis
+	docker compose logs --tail 10 redis
 
 queues:
 	docker compose exec rabbitmq rabbitmqctl list_queues
@@ -102,10 +102,10 @@ help:
 	@echo "| postgres       | Open psql shell inside postgres container                         |"
 	@echo "| rabbit         | Open shell inside rabbitmq container                              |"
 	@echo "| redis          | Open redis-cli inside redis container                             |"
-	@echo "| app_logs       | Show last 5 lines of app logs                                     |"
-	@echo "| postgres_logs  | Show last 5 lines of postgres logs                                |"
-	@echo "| rabbit_logs    | Show last 5 lines of rabbitmq logs                                |"
-	@echo "| redis_logs     | Show last 5 lines of redis logs                                   |"
+	@echo "| app_logs       | Show last 10 lines of app logs                                    |"
+	@echo "| postgres_logs  | Show last 10 lines of postgres logs                               |"
+	@echo "| rabbit_logs    | Show last 10 lines of rabbitmq logs                               |"
+	@echo "| redis_logs     | Show last 10 lines of redis logs                                  |"
 	@echo "| queues         | List queues in rabbitmq                                           |"
 	@echo "| lint           | Run golangci-lint                                                 |"
 	@echo " ———————————————————————————————————————————————————————————————————————————————————— "
