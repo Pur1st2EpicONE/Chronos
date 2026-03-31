@@ -1,76 +1,82 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Chronos</title>
-  <link rel="stylesheet" href="../static/style.css">
-</head>
-<body>
-  <div class="center-wrapper">
-    <h1>Chronos UI</h1>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Chronos</title>
+    <link rel="stylesheet" href="../static/style.css" />
+  </head>
+  <body>
+    <div class="center-wrapper">
+      <h1>Chronos UI</h1>
 
-    <form id="createForm">
-      <div class="field">
-        <label for="channel">Channel</label>
-        <select id="channel">
-          <option value="telegram">Telegram</option>
-          <option value="email">Email</option>
-          <option value="stdout">Stdout</option>
-        </select>
-      </div>
-
-      <div id="emailFields">
+      <form id="createForm">
         <div class="field">
-          <label for="subject">Subject</label>
-          <input type="text" id="subject">
+          <label for="channel">Channel</label>
+          <select id="channel">
+            <option value="telegram">Telegram</option>
+            <option value="email">Email</option>
+            <option value="stdout">Stdout</option>
+          </select>
+        </div>
+
+        <div id="emailFields">
+          <div class="field">
+            <label for="subject">Subject</label>
+            <input type="text" id="subject" />
+          </div>
+
+          <div class="field">
+            <label for="sendTo">Recipients (comma separated)</label>
+            <input type="text" id="sendTo" />
+          </div>
         </div>
 
         <div class="field">
-          <label for="sendTo">Recipients (comma separated)</label>
-          <input type="text" id="sendTo">
+          <label for="message">Message</label>
+          <textarea id="message"></textarea>
         </div>
+
+        <div class="field">
+          <label for="sendAt">Send At</label>
+          <input
+            type="text"
+            id="sendAt"
+            placeholder="2025-12-25T17:18:08+02:00"
+          />
+        </div>
+
+        <button type="submit">Create Notification</button>
+      </form>
+
+      <h2 id="notificationsTitle">Notifications</h2>
+      <div id="notificationsWrapper">
+        <table border="1">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Send At (local time)</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="notifications">
+            {{range .Notifications}}
+            <tr id="notif-{{.ID}}">
+              <td>{{.ID}}</td>
+              <td>{{.SendAtLocal}}</td>
+              <td>{{.Status}}</td>
+              <td>
+                <button onclick="cancelNotification('{{.ID}}', this)">
+                  Cancel
+                </button>
+              </td>
+            </tr>
+            {{end}}
+          </tbody>
+        </table>
       </div>
-
-      <div class="field">
-        <label for="message">Message</label>
-        <textarea id="message"></textarea>
-      </div>
-
-      <div class="field">
-        <label for="sendAt">Send At</label>
-        <input type="text" id="sendAt" placeholder="2025-12-25T17:18:08+02:00">
-      </div>
-
-      <button type="submit">Create Notification</button>
-    </form>
-
-    <h2 id="notificationsTitle">Notifications</h2>
-    <div id="notificationsWrapper">
-      <table border="1">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Send At (local time)</th>
-            <th>Status</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody id="notifications">
-          {{range .Notifications}}
-          <tr id="notif-{{.ID}}">
-            <td>{{.ID}}</td>
-            <td>{{.SendAtLocal}}</td>
-            <td>{{.Status}}</td>
-            <td>
-              <button onclick="cancelNotification('{{.ID}}', this)">Cancel</button>
-            </td>
-          </tr>
-          {{end}}
-        </tbody>
-      </table>
     </div>
-  </div>
 
-  <script src="../static/app.js"></script>
-</body>
+    <script src="../static/app.js"></script>
+  </body>
 </html>

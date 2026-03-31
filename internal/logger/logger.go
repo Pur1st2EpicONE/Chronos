@@ -1,3 +1,5 @@
+// Package logger provides a logging abstraction for the service.
+// It defines a Logger interface and a constructor for creating structured loggers.
 package logger
 
 import (

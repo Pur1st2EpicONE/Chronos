@@ -1,26 +1,27 @@
 body {
-  display: flex; 
+  display: flex;
   justify-content: center;
-  align-items: center;    
-  min-height: 100vh;    
+  align-items: center;
+  min-height: 100vh;
   margin: 0;
   padding: 0;
   font-family: Arial, sans-serif;
-  background-color: #27578F; 
+  background-color: #27578f;
   color: #1f2d3d;
   font-size: 15px;
 }
 
 .center-wrapper {
-  max-width: 750px;        
-  width: 95%;              
-  padding: 25px;           
+  max-width: 750px;
+  width: 95%;
+  padding: 25px;
   background-color: #ffffff;
   border-radius: 10px;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
 }
 
-h1, h2 {
+h1,
+h2 {
   text-align: center;
   color: #1f2d3d;
   font-size: 1.6em;
@@ -30,7 +31,7 @@ h1, h2 {
 form .field {
   display: flex;
   flex-direction: column;
-  gap: 6px;         
+  gap: 6px;
   margin-bottom: 15px;
 }
 
@@ -44,7 +45,7 @@ form input[type="text"],
 form textarea,
 form select {
   padding: 8px;
-  font-size: 14px; 
+  font-size: 14px;
   border-radius: 5px;
   border: 1px solid #cfd8e3;
   width: 100%;
@@ -65,11 +66,13 @@ button {
   cursor: pointer;
   background-color: #005b96;
   color: white;
-  transition: background-color 0.2s, transform 0.1s;
+  transition:
+    background-color 0.2s,
+    transform 0.1s;
 }
 
 button:hover:not(:disabled) {
-  background-color: #0074c7; 
+  background-color: #0074c7;
   transform: translateY(-1px);
 }
 
@@ -83,7 +86,7 @@ button:disabled {
 }
 
 #notificationsWrapper {
-  overflow-x: auto; 
+  overflow-x: auto;
 }
 
 table {
